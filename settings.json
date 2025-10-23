@@ -1,0 +1,28 @@
+{
+  "deepseek_api_key": "sk-d7fc467363f94b04afb00c1700f05da1",
+  "bilibili": {
+    "enabled": false
+  },
+  "xiaohongshu": {
+    "enabled": false,
+    "token": ""
+  },
+  "coolapp": {
+    "enabled": false,
+    "token": ""
+  },
+  "xiaoheihe": {
+    "enabled": false,
+    "token": ""
+  },
+  "filter": {
+    "min_score": 6,
+    "categories": [
+      ""
+    ]
+  },
+  "rss": {
+    "title": "智能内容精选",
+    "description": "AI筛选的优质内容聚合"
+  }
+}

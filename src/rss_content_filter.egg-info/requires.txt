@@ -1,0 +1,10 @@
+requests
+beautifulsoup4
+lxml
+openai
+feedgen
+PyQt5
+aiohttp
+bilibili-api-python
+python-dotenv
+pytz

@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: rss_content_filter
+Version: 0.1
+Requires-Dist: requests
+Requires-Dist: beautifulsoup4
+Requires-Dist: lxml
+Requires-Dist: openai
+Requires-Dist: feedgen
+Requires-Dist: PyQt5
+Requires-Dist: aiohttp
+Requires-Dist: bilibili-api-python
+Requires-Dist: python-dotenv
+Requires-Dist: pytz
+Dynamic: requires-dist
