@@ -1,0 +1,11 @@
+sqlmodel
+DrissionPage
+openai
+feedgen
+nicegui
+fastapi
+uvicorn
+pyinstaller
+pydantic-settings
+APScheduler
+numpy

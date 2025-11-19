@@ -1,0 +1,25 @@
+# 虚拟环境
+venv/
+env/
+.venv/
+smart-scraper-env/
+
+# 操作系统/IDE 产生的文件
+.DS_Store
+*.pyc
+__pycache__/
+.idea/
+.vscode/
+
+# 数据库文件 (如果是 SQLite)
+*.sqlite3
+data/database.db
+
+# 部署/日志
+*.log
+/build/
+/dist/
+
+# NiceGUI/FastAPI 等产生的临时文件
+# 假设您的静态文件或上传目录也在忽略范围
+/static/
