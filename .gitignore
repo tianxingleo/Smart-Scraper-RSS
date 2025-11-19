@@ -1,4 +1,0 @@
-# 忽略 Python 虚拟环境目录
-.venv/
-.idea/ # (可选) 如果使用 PyCharm 等 IDE，也建议忽略
-venv/

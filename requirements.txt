@@ -1,9 +1,0 @@
-requests
-beautifulsoup4
-lxml
-openai
-feedgen
-python-dotenv
-PyQt5==5.15.6
-bilibili-api-python
-qasync 
