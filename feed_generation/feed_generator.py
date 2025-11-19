@@ -20,12 +20,16 @@ def generate_rss(items, filename="output.xml"):
             <p><b>AI 分析:</b> {item.get('analysis', 'No analysis available.')}</p>
             <hr>
             <p><b>原始简介:</b></p>
-            <p>{item['content']}</p>
+            <p>{item.get('desc', '无简介')}</p>
         """
         fe.content(content_html, type='html')
         
-        if 'pubdate' in item:
-            # Assuming pubdate is a unix timestamp
-            fe.pubDate(datetime.fromtimestamp(item['pubdate']).strftime('%Y-%m-%d %H:%M:%S'))
+        pubdate = item.get('pubdate') or item.get('ctime')
+        if pubdate:
+            try:
+                # Assuming pubdate is a unix timestamp
+                fe.pubDate(datetime.fromtimestamp(pubdate).strftime('%Y-%m-%d %H:%M:%S'))
+            except Exception:
+                pass
 
-    fg.rss_file(filename) 
+    fg.rss_file(filename)
