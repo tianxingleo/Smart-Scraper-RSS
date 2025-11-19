@@ -13,7 +13,7 @@ sys.path.insert(0, src_path)
 import utils.persistence
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QTextEdit, QLabel, 
-                             QLineEdit, QSplitter, QGroupBox, QSpinBox, QDialog, QMessageBox)
+                             QLineEdit, QSplitter, QGroupBox, QSpinBox, QDialog, QMessageBox, QFileDialog)
 from PyQt5.QtCore import QThread, pyqtSignal, QTimer, Qt
 from PyQt5.QtGui import QPixmap, QImage
 from dotenv import load_dotenv, set_key
@@ -187,10 +187,44 @@ class MainWindow(QMainWindow):
         user_layout.addWidget(self.logout_button)
         user_layout.addWidget(self.clear_history_button)
         user_group.setLayout(user_layout)
+
+        # RSS Generation
+        rss_group = QGroupBox("RSS 生成")
+        rss_layout = QVBoxLayout()
+        
+        self.rss_title_input = QLineEdit("Bilibili 高价值内容精选")
+        self.rss_title_input.setPlaceholderText("RSS 标题")
+        rss_layout.addWidget(QLabel("标题:"))
+        rss_layout.addWidget(self.rss_title_input)
+        
+        self.rss_desc_input = QLineEdit("由AI筛选的Bilibili高价值内容RSS源")
+        self.rss_desc_input.setPlaceholderText("RSS 描述")
+        rss_layout.addWidget(QLabel("描述:"))
+        rss_layout.addWidget(self.rss_desc_input)
+        
+        filename_layout = QHBoxLayout()
+        self.rss_filename_input = QLineEdit("output.xml")
+        self.rss_filename_input.setPlaceholderText("输出文件名")
+        filename_layout.addWidget(self.rss_filename_input)
+        self.browse_rss_btn = QPushButton("...")
+        self.browse_rss_btn.setFixedWidth(30)
+        filename_layout.addWidget(self.browse_rss_btn)
+        rss_layout.addWidget(QLabel("文件名:"))
+        rss_layout.addLayout(filename_layout)
+        
+        btn_layout = QHBoxLayout()
+        self.generate_rss_btn = QPushButton("生成 RSS")
+        self.open_rss_btn = QPushButton("打开文件")
+        btn_layout.addWidget(self.generate_rss_btn)
+        btn_layout.addWidget(self.open_rss_btn)
+        rss_layout.addLayout(btn_layout)
+        
+        rss_group.setLayout(rss_layout)
         
         left_layout.addWidget(settings_group)
         left_layout.addWidget(control_group)
         left_layout.addWidget(user_group)
+        left_layout.addWidget(rss_group)
         left_layout.addStretch(1)
         
         # Right Panel
@@ -214,6 +248,9 @@ class MainWindow(QMainWindow):
         self.login_button.clicked.connect(self.start_login)
         self.logout_button.clicked.connect(self.logout)
         self.clear_history_button.clicked.connect(self.clear_history)
+        self.browse_rss_btn.clicked.connect(self.browse_rss_file)
+        self.generate_rss_btn.clicked.connect(self.generate_rss_feed)
+        self.open_rss_btn.clicked.connect(self.open_rss_file)
         
         self.fetch_timer = QTimer(self)
         self.fetch_timer.timeout.connect(lambda: asyncio.ensure_future(self.fetch_new_videos()))
@@ -385,7 +422,16 @@ class MainWindow(QMainWindow):
         if score >= self.score_threshold_input.value() and not result.get('is_negative', False):
             self.high_value_items.append(result)
             self.log_message(f"高价值内容: '{result.get('title', '')[:20]}...' 已加入RSS列表。")
-            generate_rss(self.high_value_items)
+            # Auto-generate RSS with default settings if items are added
+            # generate_rss(self.high_value_items) 
+            # Update: We now have manual control, but maybe we still want auto-gen?
+            # Let's keep auto-gen for now but use default metadata or current UI values?
+            # Using current UI values might be risky if user is typing.
+            # Let's stick to manual generation for now, or maybe auto-gen to a temp file?
+            # The user request implies "more interface for operation", so manual is key.
+            # I will comment out auto-gen to let user decide when to generate.
+            # generate_rss(self.high_value_items)
+            
             # Update persistence with analysis result
             utils.persistence.add_analysis_result(result)
 
@@ -401,7 +447,53 @@ class MainWindow(QMainWindow):
         self.stop_analysis()
         super().closeEvent(event)
 
+    def browse_rss_file(self):
+        filename, _ = QFileDialog.getSaveFileName(self, "选择保存位置", self.rss_filename_input.text(), "XML Files (*.xml);;All Files (*)")
+        if filename:
+            self.rss_filename_input.setText(filename)
+
+    def generate_rss_feed(self):
+        if not self.high_value_items:
+            QMessageBox.warning(self, "警告", "没有高价值内容可用于生成 RSS。请先运行分析。")
+            return
+            
+        title = self.rss_title_input.text()
+        desc = self.rss_desc_input.text()
+        filename = self.rss_filename_input.text()
+        
+        if not filename:
+            QMessageBox.warning(self, "警告", "请输入输出文件名。")
+            return
+            
+        metadata = {
+            'title': title,
+            'description': desc,
+            'link': 'https://www.bilibili.com'
+        }
+        
+        success, message = generate_rss(self.high_value_items, filename, metadata)
+        if success:
+            self.log_message(message)
+            QMessageBox.information(self, "成功", message)
+        else:
+            self.log_message(f"RSS 生成失败: {message}")
+            QMessageBox.critical(self, "错误", message)
+
+    def open_rss_file(self):
+        filename = self.rss_filename_input.text()
+        if os.path.exists(filename):
+            try:
+                os.startfile(filename)
+            except Exception as e:
+                self.log_message(f"无法打开文件: {e}")
+                QMessageBox.warning(self, "错误", f"无法打开文件: {e}")
+        else:
+            QMessageBox.warning(self, "错误", f"文件不存在: {filename}")
+
 if __name__ == "__main__":
+    from PyQt5.QtWidgets import QApplication
+    import qasync
+    
     app = QApplication(sys.argv)
     loop = qasync.QEventLoop(app)
     asyncio.set_event_loop(loop)

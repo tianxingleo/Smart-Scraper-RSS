@@ -1,184 +1,120 @@
-"""
-B站爬虫模块
-
-提供B站内容爬取功能，包括：
-1. 扫码登录
-2. 获取推荐视频 (动态)
-3. 获取视频字幕
-4. 内容分析
-"""
-
-import json
 import logging
-import asyncio
 import os
-from typing import Optional, List, Dict, Any
-# Change import to use login_v2
-from bilibili_api import login_v2 as login, user, sync, Credential, homepage
+import json
+import asyncio
 
-logger = logging.getLogger(__name__)
+# 核心修改 1: 导入正确的模块。新版 bilibili_api 使用 'hot' 获取热门，而不是 'homepage'
+# 如果报错 ImportError，请确保安装的是: pip install bilibili-api-python
+try:
+    from bilibili_api import login, user, sync, Credential, hot
+except ImportError as e:
+    logging.error(f"导入库失败: {e}")
+    logging.error("请检查是否安装了正确的库: pip install bilibili-api-python")
+    # 为了防止 IDE 报错，定义空变量
+    login = user = sync = Credential = hot = None
+
+logger = logging.getLogger("BilibiliScraper")
 
 class BilibiliScraper:
-    CREDENTIAL_FILE = os.path.join("data", "credential.json")
-    
     def __init__(self):
-        """初始化BilibiliScraper"""
+        # 核心修改 2: 优先尝试从环境变量读取 Cookies
+        # 这样可以绕过 412 风控问题
+        self.sessdata = os.getenv("BILIBILI_SESSDATA", "")
+        self.bili_jct = os.getenv("BILIBILI_BILI_JCT", "")
+        self.buvid3 = os.getenv("BILIBILI_BUVID3", "")
+        self.dedeuserid = os.getenv("BILIBILI_DEDEUSERID", "")
         self.credential = None
-        self._login_in_progress = False
-        self.login_manager = None # Store login manager instance
+
+    async def _authenticate(self):
+        """处理认证逻辑：优先 Cookie，失败则尝试二维码"""
         
-        # Ensure data directory exists
-        os.makedirs("data", exist_ok=True)
+        # 1. 尝试 Cookie 登录
+        if self.sessdata and self.bili_jct:
+            logger.info("检测到环境变量 Cookies，尝试直接登录...")
+            self.credential = Credential(
+                sessdata=self.sessdata,
+                bili_jct=self.bili_jct,
+                buvid3=self.buvid3,
+                dedeuserid=self.dedeuserid
+            )
+            if await self.credential.check_valid():
+                logger.info("Cookies 有效，登录成功。")
+                return
+            else:
+                logger.warning("Cookies 已失效，转为尝试二维码登录。")
         
-        # 尝试加载已保存的登录状态
-        self._load_credential()
-    
-    def _load_credential(self) -> bool:
-        """从文件加载凭据"""
+        # 2. 尝试二维码登录 (可能触发 412 错误)
+        logger.info("正在尝试自动登录 (QR码)...")
         try:
-            if os.path.exists(self.CREDENTIAL_FILE):
-                with open(self.CREDENTIAL_FILE, 'r') as f:
-                    data = json.load(f)
-                    sessdata = data.get('sessdata')
-                    bili_jct = data.get('bili_jct')
-                    dedeuserid = data.get('dedeuserid')
-                    buvid3 = data.get('buvid3')
-                    
-                    if sessdata and bili_jct and dedeuserid:
-                        self.credential = Credential(
-                            sessdata=sessdata, 
-                            bili_jct=bili_jct, 
-                            dedeuserid=dedeuserid,
-                            buvid3=buvid3
-                        )
-                        return True
-            return False
+            qr_login = login.QRLogin()
+            qr_data = await qr_login.get_qrcode()
+            print(f"\n【请使用B站App扫描二维码登录】\n或者在浏览器打开此链接: {qr_data.url}\n")
+            
+            # 可以在这里调用生成二维码图片的逻辑
+            # qr_data.image.show() 
+            
+            user_data = await qr_login.poll()
+            logger.info("扫码登录成功！")
+            self.credential = user_data['credential']
+            
+            # 建议：打印出 Cookie 供用户保存到 .env，避免下次再扫码
+            logger.info(f"SESSDATA: {self.credential.sessdata}")
+            logger.info(f"BILI_JCT: {self.credential.bili_jct}")
+            
         except Exception as e:
-            logger.error(f"加载凭据失败: {str(e)}")
-            return False
+            logger.error(f"自动登录失败: {e}")
+            if "412" in str(e):
+                logger.error("【关键错误】B站拒绝了二维码请求 (412)。")
+                logger.error("解决方案: 请在浏览器登录B站，按 F12 -> Application -> Cookies，复制 SESSDATA 和 bili_jct 到您的 .env 文件中。")
+            raise e
 
-    def save_credential(self):
-        """保存凭据到文件"""
-        if not self.credential:
-            return
-            
-        try:
-            creds = {
-                "sessdata": self.credential.sessdata,
-                "bili_jct": self.credential.bili_jct,
-                "dedeuserid": self.credential.dedeuserid,
-                "buvid3": self.credential.buvid3
-            }
-            
-            with open(self.CREDENTIAL_FILE, "w") as f:
-                json.dump(creds, f)
-            logger.info("凭据已保存")
-        except Exception as e:
-            logger.error(f"保存凭据失败: {str(e)}")
-
-    async def get_login_qr_code(self) -> Optional[Dict[str, str]]:
-        """
-        获取登录二维码
-        Returns:
-            包含 'url' (二维码内容) and 'key' (用于轮询) 的字典
-        """
-        try:
-            self.login_manager = login.QrCodeLogin()
-            await self.login_manager.generate_qrcode()
-            
-            # Access private member for URL as there is no public getter for raw URL
-            # Alternatively we could parse it from terminal string but that's messy
-            url = getattr(self.login_manager, '_QrCodeLogin__qr_link', '')
-            
-            # We don't need key for login_v2 class based approach, but UI expects it
-            return {'qrcode': url, 'key': 'internal'}
-        except Exception as e:
-            logger.error(f"获取二维码失败: {str(e)}")
-            return None
-
-    async def poll_login_status(self, key: str) -> bool:
-        """
-        轮询登录状态
-        Args:
-            key: ignored in login_v2 class based approach
-        Returns:
-            True if login success, False otherwise
-        """
-        if not self.login_manager:
-            return False
-            
-        try:
-            status = await self.login_manager.check_state()
-            # Check status enum
-            if status == login.QrCodeLoginEvents.DONE:
-                logger.info("登录成功")
-                self.credential = self.login_manager.get_credential()
-                self.save_credential()
-                return True
-            elif status == login.QrCodeLoginEvents.SCAN:
-                # Scanned but not confirmed
-                pass
-            elif status == login.QrCodeLoginEvents.TIMEOUT:
-                # Timeout
-                pass
-                
-            return False
-        except Exception as e:
-            # Don't log every poll error to avoid spam, unless it's critical
-            return False
-
-    def is_logged_in(self) -> bool:
-        """检查是否已登录"""
-        if self.credential and self.credential.sessdata:
-            return True
-        return False
-
-    async def get_personal_recommendations(self) -> List[Dict]:
-        """
-        获取个性化推荐视频 (这里使用动态Feed)
-        """
-        if not self.credential:
-            return []
-            
-        try:
-            # 使用 User.get_dynamics 获取关注的UP主视频
-            # Need self uid.
-            if not self.credential.dedeuserid:
-                return []
-                
-            u = user.User(uid=int(self.credential.dedeuserid), credential=self.credential)
-            dynamics = await u.get_dynamics(offset=0)
-            
-            videos = []
-            if 'cards' in dynamics:
-                for card in dynamics['cards']:
-                    desc = json.loads(card['card'])
-                    # 筛选视频类型的动态
-                    if 'title' in desc and 'bvid' in desc:
-                        videos.append({
-                            'title': desc['title'],
-                            'bvid': desc['bvid'],
-                            'desc': desc.get('desc', ''),
-                            'pic': desc.get('pic', ''),
-                            'owner': desc.get('owner', {}).get('name', 'Unknown'),
-                            'pubdate': desc.get('pubdate', 0)
-                        })
-            return videos
-        except Exception as e:
-            logger.error(f"获取动态失败: {str(e)}")
-            return []
-
-    async def get_popular_videos(self) -> List[Dict]:
+    async def fetch_hot_videos(self, limit=20):
         """获取热门视频"""
+        # 确保已登录
+        if not self.credential:
+            await self._authenticate()
+
+        logger.info("正在获取热门视频...")
         try:
-            # 使用bilibili-api-python获取热门视频
-            popular = await homepage.get_popular_videos()
-            return popular.get('list', [])
+            # 核心修改 3: 使用 hot.get_hot_list() 替代 homepage.get_popular_videos()
+            # bilibili_api 的新版本 API 变动
+            data = await hot.get_hot_list()
+            
+            # data 可能是 list 或 dict，取决于具体 API 版本，这里做兼容处理
+            video_list = data.get('list', []) if isinstance(data, dict) else data
+            
+            results = []
+            for v in video_list[:limit]:
+                # 提取关键信息
+                item = {
+                    'title': v.get('title', 'No Title'),
+                    'bvid': v.get('bvid'),
+                    'author': v.get('owner', {}).get('name', 'Unknown'),
+                    'play_count': v.get('stat', {}).get('view', 0),
+                    'description': v.get('desc', ''),
+                    'pic': v.get('pic', ''),
+                    'link': f"https://www.bilibili.com/video/{v.get('bvid')}"
+                }
+                results.append(item)
+            
+            logger.info(f"已获取 {len(results)} 条热门视频。")
+            return results
+
+        except AttributeError:
+            logger.error("获取热门视频失败: 模块方法不存在。请检查 bilibili_api 版本。")
+            return []
         except Exception as e:
-            logger.error(f"获取热门视频失败: {str(e)}")
+            logger.error(f"获取数据时发生未知错误: {e}")
             return []
 
-    async def get_video_subtitle(self, bvid: str) -> str:
-        """获取视频字幕"""
-        # Placeholder for now, can be implemented later
-        return ""
+# 这是一个同步的入口函数，供外部调用
+def get_bilibili_hot():
+    scraper = BilibiliScraper()
+    return sync(scraper.fetch_hot_videos())
+
+if __name__ == "__main__":
+    # 本地测试代码
+    logging.basicConfig(level=logging.INFO)
+    res = get_bilibili_hot()
+    for v in res:
+        print(f"{v['title']} - {v['link']}")

@@ -1,11 +1,14 @@
 from feedgen.feed import FeedGenerator
 from datetime import datetime
 
-def generate_rss(items, filename="output.xml"):
+def generate_rss(items, filename="output.xml", feed_metadata=None):
+    if feed_metadata is None:
+        feed_metadata = {}
+        
     fg = FeedGenerator()
-    fg.title("Bilibili 高价值内容精选")
-    fg.link(href='https://www.bilibili.com', rel='alternate')
-    fg.description("由AI筛选的Bilibili高价值内容RSS源")
+    fg.title(feed_metadata.get('title', "Bilibili 高价值内容精选"))
+    fg.link(href=feed_metadata.get('link', 'https://www.bilibili.com'), rel='alternate')
+    fg.description(feed_metadata.get('description', "由AI筛选的Bilibili高价值内容RSS源"))
 
     for item in items:
         fe = fg.add_entry()
@@ -28,8 +31,12 @@ def generate_rss(items, filename="output.xml"):
         if pubdate:
             try:
                 # Assuming pubdate is a unix timestamp
-                fe.pubDate(datetime.fromtimestamp(pubdate).strftime('%Y-%m-%d %H:%M:%S'))
+                fe.pubDate(datetime.fromtimestamp(pubdate, tz=datetime.now().astimezone().tzinfo))
             except Exception:
                 pass
 
-    fg.rss_file(filename)
+    try:
+        fg.rss_file(filename)
+        return True, f"RSS feed generated successfully at {filename}"
+    except Exception as e:
+        return False, f"Failed to generate RSS feed: {str(e)}"
