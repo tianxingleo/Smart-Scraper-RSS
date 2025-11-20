@@ -1,1120 +1,345 @@
-# Smart-Scraper-RSS: Deep Restructuring and Architectural Blueprint for a Next-Generation Intelligent Content Aggregation System
+🎯 Smart-Scraper-RSS (AI 增强版)
 
+下一代智能内容聚合系统
 
+一个基于 Windows/Linux 的现代化桌面应用，支持爬取 哔哩哔哩、小红书、小黑盒、酷安 等平台内容，通过 DeepSeek AI 进行深度分析、评分与清洗，最终生成高质量的 RSS 订阅源。
 
+English Version Below
 
+🚀 项目核心目标
 
-## 1. Executive Summary and Strategic Vision
+本项目旨在解决信息过载与“垃圾内容”问题，通过本地化的智能代理实现：
 
+多源内容采集：支持 B站视频、小红书笔记、小黑盒游戏资讯、酷安应用评论的自动化抓取。
 
+深度内容处理：
 
-In the current internet ecosystem, characterized by an information deluge and persistent data silos, there is a critical need for an aggregation tool capable of penetrating complex anti-bot mechanisms and intelligently filtering content. The original structure of the "Smart-Scraper-RSS" project is fundamentally inadequate for modern data acquisition demands, particularly when confronting platforms like **Xiaohongshu (Little Red Book)** and **Bilibili**, which employ highly dynamic Single Page Application (SPA) frontend rendering and aggressive anti-scraping strategies.
+B站增强：自动提取视频 CC 字幕，将其与标题、简介合并，让您不看视频也能读懂核心内容。
 
-This report provides a comprehensive, expert-level restructuring manual, guiding the development team in transforming the project from a simple collection of scripts into a **Local-First, AI-Enhanced** desktop application.
+去噪清洗：自动去除广告、推广软文。
 
-The core goal of this refactoring is to establish a **Modular Monolith** architecture. This decision is based on a deep technical assessment: for a local tool maintained by a solo developer or a small team, a complete separation of frontend (e.g., React/Vue) and backend (e.g., FastAPI) introduces unnecessary deployment complexity and state synchronization overhead ${}^1$.
+AI 价值评估：
 
-Therefore, we will adopt a **Python Full-Stack** solution, leveraging **NiceGUI** for a modern, backend-driven frontend experience, utilizing **DrissionPage** for low-level protocol control to breach anti-scraping defenses, integrating the inferencing power of **DeepSeek V3/R1** for data cleansing, and utilizing **SQLModel** for type-safe data persistence.
+调用 DeepSeek/ChatGPT 模型对内容进行 “引战、对立、负面” 检测。
 
-This manual will elaborate on the entire process, from technical selection logic and architectural design to core code implementation and final packaging, with a special focus on accelerating the development cycle through AI-Assisted Programming.
+智能打分：根据内容质量打分（0-100），低于阈值的内容自动过滤，不进入 RSS。
 
-------
+私有化 RSS 中心：生成标准的 RSS 2.0 订阅源，可接入 Feedly、Reeder 等任意阅读器。
 
+现代化 GUI：基于 NiceGUI 的原生级桌面体验，无需敲命令行即可管理所有任务。
 
+🧩 技术架构 (Modular Monolith)
 
-## 2. In-Depth Tech Stack Selection and Rationale
+本项目并未采用传统的 requests + tkinter 方案，而是采用了更适应 2025 年反爬环境的现代技术栈：
 
+模块
 
+技术选型
 
-The selection of the right technology stack is paramount to the project's success. Based on extensive research into the 2025 scraping and development landscape, the following are the mandatory technology choices for this project and the deep-rooted logic behind them.
+核心优势
 
+GUI 界面
 
+NiceGUI (FastAPI)
 
-### 2.1 Programming Language: Python's Absolute Dominance
+现代化 Material Design 风格，浏览器/桌面双模式，开发效率极高。
 
+爬虫内核
 
+DrissionPage
 
-**Python** is the unequivocal choice for this project. While Node.js excels in high-concurrency I/O, Python possesses an unparalleled ecosystem for scraping (Scrapy, DrissionPage, Playwright) and AI integration (OpenAI SDK, Pydantic). Specifically for solving Slide Captchas and reverse-engineering encrypted parameters on Chinese social media platforms, the Python community offers the richest existing solutions and algorithmic support ${}^4$.
+融合了 Requests 的速度与 Selenium 的抗指纹能力，能通过滑块验证与特征检测。
 
+AI 引擎
 
+DeepSeek API
 
-### 2.2 Core Scraping Framework: DrissionPage
+高性价比的 Token 成本，优秀的中文语义理解与 JSON 结构化输出能力。
 
+数据持久化
 
+SQLModel (SQLite)
 
-This is the most aggressive and crucial technical upgrade in the restructuring. Traditional Selenium is easily identified by modern WAFs (Web Application Firewalls) due to its telltale WebDriver signature (e.g., the `navigator.webdriver` property) ${}^4$. While Playwright is powerful, it is bulky and requires complex configuration for specific fingerprint obfuscation.
+类型安全的 ORM，单文件数据库，易于迁移与备份。
 
-- **Decision:** Adopt **DrissionPage**.
-- **Core Rationale:** DrissionPage creatively integrates the efficiency of `requests` with the flexibility of browser automation. It can directly manipulate the Chrome DevTools Protocol (CDP), meaning it bypasses WebDriver detection mechanisms to control the page as a native browser. For Cloudflare's 5-second challenge and the complex slide captchas on Xiaohongshu and Bilibili, DrissionPage provides a lower-level control capability without the need for frequent context switching ${}^7$.
+任务调度
 
+APScheduler
 
+稳定强大的后台定时任务管理，支持多线程并发抓取。
 
-### 2.3 User Interface and Application Architecture: NiceGUI (Based on FastAPI)
+🛠️ 功能实现进度 (Roadmap)
 
+✅ 已实现功能
 
+[x] 核心架构：NiceGUI 界面框架、SQLModel 数据库设计、任务调度器。
 
-Addressing the question of whether to separate the frontend and backend, this report delivers a firm negative. For a local data utility, the traditional React/Vue + FastAPI stack leads to "double the code" and complex state synchronization.
+[x] 基础爬虫：
 
-- **Decision:** Adopt **NiceGUI**.
-- **Core Rationale:** NiceGUI is a high-level UI framework built on FastAPI, allowing developers to write web interfaces using pure Python code. It enables real-time frontend-backend communication via WebSockets, making it easy to build responsive applications. Crucially, NiceGUI supports **Native Mode**, which wraps a WebView to make the application appear as a standard desktop software to the user, not a browser page, perfectly aligning with the "local-first" mandate of this project ${}^1$.
+[x] 小红书 (基础图文抓取)
 
+[x] 哔哩哔哩 (基础视频信息抓取)
 
+[x] AI 分析：接入 DeepSeek 进行摘要生成、情感分析(Pos/Neg)、关键词提取。
 
-### 2.4 Data Persistence: SQLModel (SQLite)
+[x] RSS 生成：支持生成标准 RSS XML 链接。
 
+[x] 反爬对抗：
 
+[x] DrissionPage 浏览器指纹伪装。
 
-- **Decision:** Adopt **SQLModel**.
-- **Core Rationale:** Developed by the creator of FastAPI, SQLModel ingeniously combines SQLAlchemy's ORM capabilities with Pydantic's data validation. This means a single model class can serve simultaneously as the database table schema and the API data validation schema, dramatically reducing boilerplate code. SQLite is the optimal lightweight, zero-configuration choice for local applications ${}^{10}$.
+[x] Cookie 持久化与复用。
 
+🚧 开发中 / 待实现 (TODO)
 
+[ ] 平台扩展：
 
-### 2.5 Intelligence Engine: DeepSeek API
+[ ] 小黑盒 爬虫策略实现。
 
+[ ] 酷安 (CoolAPK) 爬虫策略实现。
 
+[ ] 内容深度处理：
 
-- **Decision:** Adopt **DeepSeek V3 or R1**.
-- **Core Rationale:** DeepSeek's comprehension capabilities in the Chinese context are comparable to GPT-4, yet it offers a significant advantage in API cost. Its newly introduced **JSON Output** mode is essential for transforming unstructured social media text into structured RSS summaries ${}^{12}$.
+[ ] B站字幕提取：通过监听数据包获取 CC 字幕并合并文本。
 
+[ ] 高级 AI 逻辑：
 
+[ ] 评分系统：让 AI 输出 0-100 分值。
 
-### 2.6 Technology Selection Comparison Matrix
+[ ] 风控过滤：识别“引战/挂人”内容并在 RSS 生成阶段过滤。
 
+[ ] 验证码攻防：
 
+[ ] 集成 OpenCV 实现真实的滑块缺口识别（目前为模拟逻辑）。
 
-To better illustrate the selection logic, the table below compares mainstream options with the recommended solutions:
+[ ] 完善动态代理池支持。
 
-| **Dimension**       | **Traditional Solution** | **Competitor Solution** | **Recommended Solution (Smart-Scraper-RSS)** | **Advantage Analysis**                                       |
-| ------------------- | ------------------------ | ----------------------- | -------------------------------------------- | ------------------------------------------------------------ |
-| **Language**        | Python/Node.js           | Golang                  | **Python 3.11+**                             | Rich ecosystem, AI glue language ${}^5$                      |
-| **Scraper Kernel**  | Selenium                 | Playwright              | **DrissionPage**                             | Evades WebDriver detection, lightweight, CDP protocol control ${}^4$ |
-| **UI Architecture** | Tkinter / Qt             | React + API             | **NiceGUI (FastAPI)**                        | Rapid development, unified language stack, native look and feel ${}^1$ |
-| **Database**        | Raw SQL                  | SQLAlchemy              | **SQLModel**                                 | Type safety, Pydantic integration, reduced boilerplate ${}^{10}$ |
-| **AI Model**        | Local LLM                | OpenAI GPT-4            | **DeepSeek API**                             | High-cost performance, strong Chinese semantic understanding, JSON mode support ${}^{13}$ |
-| **Distribution**    | Source code run          | Docker Container        | **PyInstaller Single File**                  | Zero-config user experience, click-and-run ${}^9$            |
+💻 快速开始
 
-------
+1. 环境准备
 
+需要 Python 3.10 或更高版本。
 
+# 克隆项目
+git clone [https://github.com/your-repo/Smart-Scraper-RSS.git](https://github.com/your-repo/Smart-Scraper-RSS.git)
+cd Smart-Scraper-RSS
 
-## 3. Architectural Design and Directory Blueprint
+# 安装依赖
+pip install -r requirements.txt
 
 
+2. 配置 AI
 
-This project will adhere to the **Modular Monolith** architecture. This pattern enforces clear module boundaries while maintaining the cohesion of a single codebase, allowing for future scalability options like distributed microservices (e.g., splitting the scraping nodes).
+本项目强依赖 AI 能力，请设置 DeepSeek API Key (或兼容 OpenAI 格式的其他 Key)。
 
+# Windows PowerShell
+$env:DEEPSEEK_API_KEY="sk-your-api-key"
 
+# Linux/Mac
+export DEEPSEEK_API_KEY="sk-your-api-key"
 
-### 3.1 System Layered Architecture
 
+3. 启动应用
 
+python -m app.main
 
-The system is logically divided into four layers:
 
-1. **Presentation Layer:** The NiceGUI frontend, responsible for user interaction, task triggering, and log display.
-2. **Application Layer:** FastAPI routes and controllers, coordinating background tasks and managing WebSocket connections.
-3. **Domain Layer:** Contains the core business logic, including platform-specific scraping strategies (Strategy Pattern), Captcha Solvers, and RSS generation logic.
-4. **Infrastructure Layer:** Responsible for database access (SQLModel), AI API calls (DeepSeek Client), and file system operations.
+启动后会自动打开系统默认浏览器访问控制台。
 
+📂 目录结构
 
-
-### 3.2 Recommended Directory Structure
-
-
-
-A clear directory structure is the foundation of maintainable code. The following structure is designed for extensibility and modularity:
-
-```
 Smart-Scraper-RSS/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py                    # Application entry point, NiceGUI/FastAPI startup config
-│   ├── config.py                  # Environment variables and global configuration management
-│   │
-│   ├── ui/                        # [Presentation Layer] User interface logic
-│   │   ├── __init__.py
-│   │   ├── layout.py              # Generic layout (sidebar, header)
-│   │   ├── pages/                 # Page routes
-│   │   │   ├── dashboard.py       # Main console
-│   │   │   ├── sources.py         # Data source management
-│   │   │   └── settings.py        # Settings page
-│   │   └── components/            # Reusable UI components (log window, status cards)
-│   │
-│   ├── core/                      # [Application Layer] Core control logic
-│   │   ├── task_queue.py          # Simple in-memory task queue (Producer-Consumer pattern)
-│   │   └── scheduler.py           # Scheduled task management (APScheduler)
-│   │
-│   ├── scraper/                   # [Domain Layer] Scraper engine
-│   │   ├── __init__.py
-│   │   ├── browser.py             # DrissionPage browser singleton management
-│   │   ├── strategies/            # Strategy Pattern implementation
-│   │   │   ├── base.py            # Abstract Base Class
-│   │   │   ├── xiaohongshu.py     # Xiaohongshu concrete implementation
-│   │   │   └── bilibili.py        # Bilibili concrete implementation
-│   │   └── utils/
-│   │       ├── captcha.py         # Slide Captcha solving algorithms
-│   │       └── cookie_jar.py      # Cookie persistence management
-│   │
-│   ├── database/                  # [Infrastructure Layer] Data persistence
-│   │   ├── engine.py              # Database connection engine
-│   │   ├── models.py              # SQLModel definitions
-│   │   └── crud.py                # Database operation wrapper
-│   │
-│   ├── ai/                        # [Infrastructure Layer] AI Services
-│   │   ├── client.py              # DeepSeek API client wrapper
-│   │   └── prompts.py             # Prompt template management
-│   │
-│   └── rss/                       # [Domain Layer] RSS Generation
-│       └── feed_gen.py            # FeedGen library wrapper
-│
-├── migrations/                    # Alembic database migration scripts
-├── data/                          # Runtime data (SQLite db, logs)
-├── assets/                        # Static resources (icons, fonts)
-├── requirements.txt               # Dependency list
-├── alembic.ini                    # Migration configuration
-└── build.py                       # PyInstaller packaging script
-```
+│   ├── ai/              # AI 客户端与 Prompt 模板 (需修改此处增加评分逻辑)
+│   ├── core/            # 调度器与任务队列
+│   ├── database/        # SQLModel 模型定义
+│   ├── rss/             # RSS 生成逻辑 (需修改此处增加过滤逻辑)
+│   ├── scraper/         # 核心爬虫引擎
+│   │   ├── strategies/  # 平台策略 (在此添加 Xiaoheihe/Coolapk)
+│   │   └── utils/       # 验证码与 Cookie 工具
+│   └── ui/              # NiceGUI 界面代码
+└── data/                # 存储数据库与浏览器配置
 
-The advantages of this structure are:
 
-- **Separation of Concerns:** UI code is fully decoupled from scraping logic; changing the UI will not break the scraper, and vice versa.
-- **AI-Assisted Development:** When requesting AI code generation, instructions can clearly specify, for example, "implement the logic in `app/scraper/strategies/xiaohongshu.py`," reducing context confusion.
+🤝 贡献指南
 
-------
+如果你想添加新的平台支持（如知乎、微博）：
 
+在 app/scraper/strategies/ 下创建一个新文件（如 zhihu.py）。
 
+继承 BaseScraper 类并实现 scrape 方法。
 
-## 4. Core Building Steps and Implementation Details
+在界面中注册新的 Source 类型即可。
 
+🎯 Smart-Scraper-RSS (AI Enhanced Edition)
 
+Next-Gen Intelligent Content Aggregation System
 
-This section breaks down the implementation path for each module, covering key algorithms, applied design patterns, and specific AI Prompting guidance.
+A modern desktop application based on Windows/Linux, supporting content scraping from Bilibili, Xiaohongshu, Xiaoheihe, CoolAPK, utilizing DeepSeek AI for deep analysis, scoring, and cleaning, to generate high-quality RSS feeds.
 
+🚀 Core Goals
 
+This project aims to solve the problem of information overload and "spam content" through a localized intelligent agent:
 
-### Step 1: Data Modeling and Database Layer Construction
+Multi-Source Collection: Automated scraping of Bilibili videos, Xiaohongshu notes, Xiaoheihe game news, and CoolAPK app reviews.
 
+Deep Content Processing:
 
+Bilibili Enhancement: Automatically extract video CC subtitles and merge them with titles and descriptions, allowing you to understand core content without watching the video.
 
-**Goal:** Define the `Source` (data source) and `ScrapedItem` (scraped content) models and establish their relationship.
+De-noising: Automatically remove ads and promotional soft articles.
 
-Technical Details:
+AI Value Evaluation:
 
-Use SQLModel to define the table structure. The ScrapedItem table is critical and must include AI-analyzed fields (e.g., sentiment, summary). To comply with the RSS standard, pub_date and link must be stored ${}^{10}$.
+Call DeepSeek/ChatGPT models to detect "provocative, polarizing, negative" content.
 
-**Recommended Pattern:** Repository Pattern. Although SQLModel simplifies operations, wrapping CRUD functions provides a layer for future caching integration.
+Smart Scoring: Score content based on quality (0-100); content below the threshold is automatically filtered out of the RSS.
 
-**Code Implementation Reference:**
+Private RSS Hub: Generate standard RSS 2.0 feeds compatible with any reader like Feedly or Reeder.
 
-Python
+Modern GUI: Native-grade desktop experience based on NiceGUI, managing tasks without command-line operations.
 
-```
-# app/database/models.py
-from typing import Optional, List
-from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
+🧩 Technical Architecture (Modular Monolith)
 
-class Source(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: str
-    platform: str  # 'xiaohongshu' | 'bilibili'
-    frequency: int = 60  # minutes
-    is_active: bool = True
-    last_scraped: Optional[datetime] = None
-    
-    items: List["ScrapedItem"] = Relationship(back_populates="source")
+Instead of the traditional requests + tkinter approach, this project adopts a modern tech stack better suited for the 2025 anti-scraping environment:
 
-class ScrapedItem(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    source_id: int = Field(foreign_key="source.id")
-    title: str
-    url: str = Field(unique=True)
-    content: str
-    images: str  # JSON string
-    publish_date: datetime
-    
-    # AI Enrichment
-    ai_summary: Optional[str] = None
-    sentiment: Optional[str] = None
-    
-    source: Source = Relationship(back_populates="items")
-```
+Module
 
-**🤖 AI Building Prompt:**
+Technology
 
-> "You are a Python backend expert. Please write the `models.py` file using the SQLModel library. I need two models: `Source` (to store scraper task configurations, including url, platform, interval, etc.) and `ScrapedItem` (to store scraping results, including title, content, ai_summary, etc.). Establish a one-to-many relationship, and ensure the `url` field in `ScrapedItem` is unique. Additionally, write a `create_db_and_tables` function to initialize the SQLite database."
+Core Advantage
 
-------
+GUI
 
+NiceGUI (FastAPI)
 
+Modern Material Design style, browser/desktop dual mode, high development efficiency.
 
-### Step 2: Building the DrissionPage Scraper Engine
+Scraper Kernel
 
+DrissionPage
 
+Combines the speed of Requests with the anti-fingerprinting capability of Selenium; passes slider captchas and feature detection.
 
-**Goal:** Create a core scraping engine capable of dynamic strategy switching and autonomous anti-bot handling.
+AI Engine
 
-Technical Details:
+DeepSeek API
 
-Anti-scraping strategies on Xiaohongshu and Bilibili primarily include: fingerprint detection (Canvas/WebGL), automation tool detection (WebDriver), IP frequency limiting, and behavioral analysis (mouse track). DrissionPage inherently resolves the first two. For behavioral analysis, we must implement a humanized mouse movement algorithm.
+Cost-effective token usage, excellent Chinese semantic understanding, and JSON structured output capabilities.
 
-**Design Pattern:** **Strategy Pattern**. Define a `BaseScraper` interface, with `XiaohongshuScraper` and `BilibiliScraper` implementing the specific parsing logic ${}^{18}$.
+Persistence
 
+SQLModel (SQLite)
 
+Type-safe ORM, single-file database, easy to migrate and back up.
 
-#### 4.1 Browser Management and Anti-Fingerprint Configuration
+Scheduler
 
+APScheduler
 
+Stable and robust background task management supporting multi-threaded concurrent scraping.
 
-In `app/scraper/browser.py`, we must configure `ChromiumOptions` for maximum stealth.
+🛠️ Roadmap
 
-Python
+✅ Implemented
 
-```
-from DrissionPage import ChromiumPage, ChromiumOptions
+[x] Core Architecture: NiceGUI framework, SQLModel database design, Task scheduler.
 
-class BrowserManager:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(BrowserManager, cls).__new__(cls)
-            cls._instance.page = cls._init_page()
-        return cls._instance
+[x] Basic Scrapers:
 
-    @staticmethod
-    def _init_page():
-        co = ChromiumOptions()
-        # Use local user config to persist login state
-        co.set_user_data_path(r'./data/browser_profile')
-        co.set_argument('--no-sandbox')
-        # CRITICAL: Disable automation control features
-        co.set_argument('--disable-blink-features=AutomationControlled')
-        return ChromiumPage(addr_or_opts=co)
-```
+[x] Xiaohongshu (Basic text/image scraping)
 
+[x] Bilibili (Basic video info scraping)
 
+[x] AI Analysis: DeepSeek integration for summary generation, sentiment analysis (Pos/Neg), keyword extraction.
 
-#### 4.2 Humanized Slide Captcha Solution
+[x] RSS Generation: Support for generating standard RSS XML links.
 
+[x] Anti-Scraping:
 
+[x] DrissionPage browser fingerprint masking.
 
-This is a core difficulty of the project. Simple `move_to` actions are flagged as robotic. We need to use **Bezier Curves** or a physical acceleration model to generate the trajectory ${}^{19}$.
+[x] Cookie persistence and reuse.
 
-**Algorithm Logic:**
+🚧 In Development / TODO
 
-1. **Identify Gap:** Capture the slider image and background image, use OpenCV (`cv2.matchTemplate`) to identify the gap's X-coordinate.
-2. **Trajectory Generation:** Do not move in a straight line. Generate a trajectory array that includes acceleration, deceleration, overshoot (moving slightly past the target), and correction (moving back).
-3. **Execute Movement:** Use DrissionPage's `page.actions` chained calls, inserting minute, random delays between each step to simulate real human hand tremor.
+[ ] Platform Expansion:
 
-**🤖 AI Building Prompt:**
+[ ] Xiaoheihe scraping strategy.
 
-> "I am using the DrissionPage library in Python to handle a slide verification captcha. Please write a function named `human_slide_behavior`. This function should accept the `page` object, the `slider_element`, and the target distance `distance`. Implement a physics simulation algorithm that generates a mouse movement trajectory. The trajectory should include an acceleration phase, a deceleration phase, a slight overshoot (moving past the target position slightly), and then a correction back. Use `page.actions.move()` to follow the generated trajectory, adding small, random `wait` times between each step to simulate realistic human hand movements."
+[ ] CoolAPK scraping strategy.
 
-------
+[ ] Deep Content Processing:
 
+[ ] Bilibili Subtitle Extraction: Listen to data packets to acquire CC subtitles and merge text.
 
+[ ] Advanced AI Logic:
 
-### Step 3: Integrating DeepSeek for Content Cleansing
+[ ] Scoring System: Let AI output a 0-100 score.
 
+[ ] Risk Filtering: Identify "provocative/doxing" content and filter it during RSS generation.
 
+[ ] Captcha Defense:
 
-**Goal:** Transform the raw, messy scraped text into high-quality RSS summaries.
+[ ] Integrate OpenCV for real slider gap recognition (currently simulated).
 
-Technical Details:
+[ ] Perfect dynamic proxy pool support.
 
-Leverage DeepSeek's JSON Output feature to force the model to return structured data. This is crucial for subsequent RSS XML generation, as we need defined fields (like summary, category).
+💻 Quick Start
 
-Prompt Engineering:
+1. Prerequisites
 
-DeepSeek models (especially R1) are highly obedient to System Prompt instructions. We must clearly define the JSON Schema ${}^{13}$.
+Python 3.10 or higher is required.
 
-**Code Implementation Reference:**
+# Clone project
+git clone [https://github.com/your-repo/Smart-Scraper-RSS.git](https://github.com/your-repo/Smart-Scraper-RSS.git)
+cd Smart-Scraper-RSS
 
-Python
+# Install dependencies
+pip install -r requirements.txt
 
-```
-# app/ai/client.py
-from openai import OpenAI
-import json
 
-class AIProcessor:
-    def __init__(self, api_key):
-        self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-    
-    def analyze(self, text):
-        prompt = """
-        You are a social media content analyst. Analyze the following text and output in strictly JSON format:
-        {
-            "summary": "A one-sentence summary, no more than 50 characters",
-            "sentiment": "Positive/Neutral/Negative",
-            "keywords": ["list", "of", "keywords"],
-            "is_ad": boolean (Is this an advertisement?)
-        }
-        """
-        response = self.client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": text}
-            ],
-            response_format={'type': 'json_object'} # CRITICAL setting
-        )
-        return json.loads(response.choices.message.content)
-```
+2. Configure AI
 
-**🤖 AI Building Prompt:**
+This project relies heavily on AI capabilities. Please set the DeepSeek API Key (or other OpenAI-compatible keys).
 
-> "Please write a Python class that wraps the DeepSeek API using the `openai` SDK. Implement a `process_content` method that receives raw text, calls the API, and enforces a JSON format return. The System Prompt should instruct the model to extract a summary, sentiment, and keywords. Include error handling logic (e.g., a retry mechanism for JSON parsing failures)."
+# Windows PowerShell
+$env:DEEPSEEK_API_KEY="sk-your-api-key"
 
-------
+# Linux/Mac
+export DEEPSEEK_API_KEY="sk-your-api-key"
 
 
+3. Start Application
 
-### Step 4: Building the NiceGUI Frontend
+python -m app.main
 
 
+The application will automatically open the default system browser to access the dashboard.
 
-**Goal:** Provide a modern, responsive operation dashboard.
-
-Technical Details:
-
-NiceGUI is corely event-driven. We must use ui.timer to periodically refresh task status and ui.run_with to handle background tasks, preventing the main UI thread from blocking ${}^1$.
-
-**Layout Design:**
-
-- **Left Sidebar:** Navigation menu (Dashboard, Source Management, Logs).
-- **Main Area:** Use `ui.table` to display scraping results, with pagination and search support.
-- **Console:** Use `ui.log` for real-time output of scraper operational logs.
-
-Native Mode Implementation:
-
-To make the application feel like native software, configure native=True at startup. This launches a lightweight WebView window in the background ${}^9$.
-
-Python
-
-```
-# app/main.py
-from nicegui import ui
-from app.ui.layout import create_layout
-from app.database.crud import get_scraped_items # Assume this function exists
-
-@ui.page('/')
-def index():
-    with create_layout():
-        ui.label('Smart Scraper RSS').classes('text-2xl font-bold')
-        
-        # Data table
-        columns = [
-            {'name': 'title', 'label': 'Title', 'field': 'title'},
-            {'name': 'ai_summary', 'label': 'AI Summary', 'field': 'ai_summary'},
-            {'name': 'sentiment', 'label': 'Sentiment', 'field': 'sentiment'},
-        ]
-        # Placeholder for dynamic data fetching
-        data = get_scraped_items(limit=20) 
-        ui.table(columns=columns, rows=data, row_key='id').classes('w-full')
-
-# Startup config: Native mode, specified window size, disable reload (production)
-ui.run(native=True, title="Smart Scraper", window_size=(1200, 800), reload=False)
-```
-
-**🤖 AI Building Prompt:**
-
-> "I am building a dashboard using the Python NiceGUI library. Please help me write a `layout.py` module. It should contain a generic framework with a sidebar and a top navigation bar. The sidebar should include icons and links. The main content area should be variable. Please use Tailwind CSS classes to style the interface (e.g., `bg-gray-100`, `p-4`, etc.)."
-
-------
-
-
-
-### Step 5: RSS Generation and Service
-
-
-
-**Goal:** Expose the cleansed data as a standard RSS XML interface.
-
-Technical Details:
-
-Use the python-feedgen library. FastAPI (the underlying framework of NiceGUI) can directly mount a route to serve the XML file for download or online access ${}^{23}$.
-
-**🤖 AI Building Prompt:**
-
-> "Please write a function that uses the `feedgen` library to generate an RSS 2.0 feed. The input is a list of dictionaries (each containing title, link, description, pubDate). The function should generate an XML string. Special attention: `pubDate` must include timezone information. Show how to integrate this function into a FastAPI route so it can be accessed via `/feed.xml`."
-
-------
-
-
-
-## 5. Deployment Engineering
-
-
-
-To make the application accessible to non-technical users, the complex Python environment must be packaged into an executable file.
-
-
-
-### 5.1 PyInstaller Packaging Strategy
-
-
-
-Packaging a NiceGUI application is more complex than a standard script because it requires including static assets and template files.
-
-**Core Configuration:**
-
-1. **--add-data:** Must include NiceGUI's frontend assets.
-2. **--windowed:** Hides the console window (effective on Windows only).
-3. **Entry Point:** Ensure `ui.run()` is called within the `if __name__ == "__main__":` block.
-
-**build.py Script Example (for guidance):**
-
-Python
-
-```
-import subprocess
-from pathlib import Path
-import nicegui
-
-# Example cmd for PyInstaller with NiceGUI assets
-# (Note: Actual path needs to be dynamically resolved)
-nicegui_path = Path(nicegui.__file__).parent
-cmd = [
-    'pyinstaller',
-    'app/main.py',
-    '--name', 'SmartScraperRSS',
-    '--onefile',
-    '--windowed',
-    f'--add-data={nicegui_path}/templates:nicegui/templates',
-    f'--add-data={nicegui_path}/static:nicegui/static',
-    # Add other assets here
-    '--hiddenimport', 'uvicorn',
-    '--hiddenimport', 'fastapi',
-]
-subprocess.call(cmd)
-```
-
-**🤖 AI Building Prompt:**
-
-> "I need to package a NiceGUI application into a single EXE file. Provide a `build.py` script. The script must automatically locate the installation path of the `nicegui` library and pass it as the `--add-data` argument to PyInstaller. Ensure the script handles the difference between Windows and Linux path separators."
-
-------
-
-
-
-## 6. Advanced Anti-Scraping Countermeasures Deep Dive
-
-
-
-After implementing the basic functionality, the following advanced mechanisms must be introduced to counter 2025-level defenses:
-
-
-
-### 6.1 Dynamic Proxy Pool and IP Rotation
-
-
-
-Simple requests are easily IP-blocked. A proxy service (such as Bright Data, ScraperAPI, or a self-built pool) must be integrated.
-
-- **Implementation:** In the `BrowserManager`, change the proxy IP for every new page context or every N requests. DrissionPage supports setting `--proxy-server` in `ChromiumOptions` ${}^{25}$.
-
-
-
-### 6.2 Local Storage and Cookie Reuse
-
-
-
-Platforms like Xiaohongshu are highly sensitive to "cold-start" accounts (those with no history) ${}^{26}$.
-
-- **Strategy:** Guide the user to log in manually during the first run. Afterward, persistently store the `browser_profile` (user data directory). DrissionPage natively supports loading user profiles, thereby maintaining Cookies and LocalStorage, making the scraper appear as a "returning old user" rather than a "new visitor" ${}^7$.
-
-
-
-### 6.3 Traffic Pool Test Simulation
-
-
-
-Research suggests that Xiaohongshu's algorithm employs a "traffic pool test" ${}^{26}$. The scraper must not only "view" but also occasionally simulate "interaction" (e.g., scrolling to the bottom, randomly clicking images for details) to increase the account's Trust Score and prevent it from being flagged as a zombie account.
-
-------
-
-
-
-## 7. Conclusion
-
-
-
-Guided by this manual, we will build an enterprise-grade personal data aggregation tool from the ground up. **DrissionPage** provides the capability to penetrate modern web defenses, **DeepSeek** imbues it with the intelligence to understand content, and **NiceGUI** with **SQLModel** ensures development efficiency and architectural stability.
-
-This is more than just a code refactoring; it is a leap from a "script-kiddie" mindset to a "software engineering" one. The final deliverable will no longer be a fragile `.py` file but an intelligent, self-recovering desktop application with a graphical interface.
-
-# Smart-Scraper-RSS：下一代智能内容聚合系统的深度重构与架构蓝图
-
-
-
-
-
-## 1. 执行摘要与战略愿景
-
-
-
-在当前信息爆炸且数据孤岛日益严重的互联网生态中，构建一个能够穿透复杂反爬虫机制、具备智能化内容筛选能力的聚合工具显得尤为迫切。本项目“Smart-Scraper-RSS”的原始形态已无法满足现代数据采集的需求，特别是在面对小红书（Xiaohongshu）和哔哩哔哩（Bilibili）等采用高度动态化前端渲染（SPA）及激进反爬策略的平台时，传统的脚本式爬虫显得力不从心。本报告旨在提供一份详尽的、专家级的重构手册，指导开发团队将该项目从一个简单的脚本集合转型为一个基于 **本地优先（Local-First）**、**AI 增强（AI-Enhanced）** 的桌面级应用。
-
-重构的核心目标是建立一个**模块化单体（Modular Monolith）** 架构。这一决策基于对现有技术栈的深入研判：对于单人或小团队维护的本地工具而言，前后端彻底分离（如 React + FastAPI）会引入不必要的部署复杂性和状态同步开销 1。因此，我们将采用 **Python 全栈** 方案，利用 **NiceGUI** 实现后端驱动的现代化前端交互，结合 **DrissionPage** 的底层协议控制能力突破反爬封锁，并引入 **DeepSeek V3/R1** 的推理能力清洗数据，最终通过 **SQLModel** 实现类型安全的数据持久化。
-
-本手册将详细阐述从技术选型逻辑、架构设计、核心代码实现到最终打包交付的全过程，并特别关注如何利用 AI 辅助编程（AI-Assisted Programming）来加速这一开发流程。
-
-------
-
-
-
-## 2. 技术栈深度选型与理由
-
-
-
-在重构之初，选择正确的技术栈是项目成败的关键。基于对 2025 年爬虫与开发生态的广泛调研，以下是针对本项目的强制性技术选型及其深层逻辑。
-
-
-
-### 2.1 编程语言：Python 的绝对主导地位
-
-
-
-Python 无疑是本项目的唯一选择。尽管 Node.js 在处理高并发 I/O 方面表现优异，但 Python 拥有无可比拟的爬虫生态系统（Scrapy, DrissionPage, Playwright）以及 AI 集成库（OpenAI SDK, Pydantic）。特别是针对中国社交媒体平台的滑块验证码（Slide Captcha）解决和加密参数逆向，Python 社区提供了最丰富的现成方案和算法支持 4。
-
-
-
-### 2.2 采集核心框架：DrissionPage
-
-
-
-这是本次重构中最激进也是最关键的技术升级。传统的 Selenium 因其明显的 WebDriver 特征（如 `navigator.webdriver` 属性）极易被现代 WAF（Web Application Firewall）识别 4。Playwright 虽然强大，但其体积庞大且在处理特定指纹混淆时配置繁琐。
-
-- **决策：** 采用 **DrissionPage**。
-- **核心理由：** DrissionPage 创造性地融合了 `requests` 的高效率与浏览器自动化的灵活性。它能够直接操作 Chrome DevTools Protocol (CDP)，这意味着它可以绕过 WebDriver 的检测机制，直接以原生浏览器的方式控制页面。对于 Cloudflare 的 5秒盾以及小红书、B站的复杂滑块验证，DrissionPage 提供了更底层的控制能力，且无需频繁切换上下文 7。
-
-
-
-### 2.3 用户界面与应用架构：NiceGUI (基于 FastAPI)
-
-
-
-针对“是否需要前后端分离”的问题，本报告给出明确否定建议。对于本地数据工具，传统的 React/Vue + FastAPI 架构会导致“双倍代码量”和复杂的状态同步问题。
-
-- **决策：** 采用 **NiceGUI**。
-- **核心理由：** NiceGUI 是一个基于 FastAPI 的高层 UI 框架，允许开发者使用纯 Python 代码编写 Web 界面。它通过 WebSocket 实现前后端实时通信，能够轻松构建响应式应用。更重要的是，NiceGUI 支持 **Native Mode（原生模式）**，通过封装 WebView，使得应用在用户端表现为一个标准的桌面软件，而非浏览器网页，完美契合本项目“构建手册”的需求 1。
-
-
-
-### 2.4 数据持久化：SQLModel (SQLite)
-
-
-
-- **决策：** 采用 **SQLModel**。
-- **核心理由：** SQLModel 由 FastAPI 作者开发，它巧妙地结合了 SQLAlchemy 的 ORM 能力与 Pydantic 的数据验证能力。这意味着定义一个模型类即可同时用于数据库表结构（Table Schema）和 API 数据校验（Validation Schema），极大减少了代码重复。对于本地应用，SQLite 是轻量级且零配置的最佳选择 10。
-
-
-
-### 2.5 智能化引擎：DeepSeek API
-
-
-
-- **决策：** 采用 **DeepSeek V3 或 R1**。
-- **核心理由：** DeepSeek 在中文语境下的理解能力与 GPT-4 相当，但在 API 成本上具有显著优势。其新推出的 **JSON Output** 模式对于将非结构化的社交媒体文本转化为结构化的 RSS 摘要至关重要 12。
-
-
-
-### 2.6 技术选型对比矩阵
-
-
-
-为了更直观地展示选型逻辑，以下表格对比了主流方案与本报告推荐方案：
-
-| **维度**     | **传统方案**   | **竞品方案** | **推荐方案 (Smart-Scraper-RSS)** | **优势分析**                                  |
-| ------------ | -------------- | ------------ | -------------------------------- | --------------------------------------------- |
-| **语言**     | Python/Node.js | Golang       | **Python 3.11+**                 | 生态丰富，AI 胶水语言 5                       |
-| **爬虫内核** | Selenium       | Playwright   | **DrissionPage**                 | 规避 WebDriver 检测，轻量级，CDP 协议控制 4   |
-| **UI 架构**  | Tkinter / Qt   | React + API  | **NiceGUI (FastAPI)**            | 开发速度快，统一语言栈，原生外观 1            |
-| **数据库**   | Raw SQL        | SQLAlchemy   | **SQLModel**                     | 类型安全，Pydantic 集成，减少样板代码 10      |
-| **AI 模型**  | 本地 LLM       | OpenAI GPT-4 | **DeepSeek API**                 | 极高性价比，中文语义理解强，支持 JSON 模式 13 |
-| **分发方式** | 源码运行       | Docker 容器  | **PyInstaller 单文件**           | 用户零配置，点击即用 9                        |
-
-
-
-------
-
-
-
-## 3. 架构设计与目录蓝图
-
-
-
-本项目将遵循 **模块化单体（Modular Monolith）** 架构。这种架构模式在保持代码库统一性的同时，强制执行清晰的模块边界，为未来可能的微服务化（如将爬虫节点分布式部署）预留了空间。
-
-
-
-### 3.1 系统分层架构
-
-
-
-系统逻辑上分为四层：
-
-1. **表现层 (Presentation Layer):** 基于 NiceGUI 的前端页面，负责用户交互、任务触发和日志展示。
-2. **应用层 (Application Layer):** 基于 FastAPI 的路由与控制器，协调后台任务，管理 WebSocket 连接。
-3. **领域层 (Domain Layer):** 包含核心业务逻辑，即针对不同平台的爬取策略（Strategy Pattern）、验证码求解器（Captcha Solver）和 RSS 生成逻辑。
-4. **基础设施层 (Infrastructure Layer):** 负责数据库访问（SQLModel）、AI API 调用（DeepSeek Client）和文件系统操作。
-
-
-
-### 3.2 推荐目录结构
-
-
-
-一个清晰的目录结构是代码可维护性的基石。以下结构经过精心设计，以支持扩展性和模块化：
+📂 Directory Structure
 
 Smart-Scraper-RSS/
-
 ├── app/
+│   ├── ai/              # AI client and Prompt templates (Modify here to add scoring logic)
+│   ├── core/            # Scheduler and task queue
+│   ├── database/        # SQLModel definitions
+│   ├── rss/             # RSS generation logic (Modify here to add filtering logic)
+│   ├── scraper/         # Core scraper engine
+│   │   ├── strategies/  # Platform strategies (Add Xiaoheihe/Coolapk here)
+│   │   └── utils/       # Captcha and Cookie utilities
+│   └── ui/              # NiceGUI interface code
+└── data/                # Database and browser configuration storage
 
-│   ├── init.py
 
-│   ├── main.py                  # 应用入口，NiceGUI/FastAPI 启动配置
+🤝 Contribution Guide
 
-│   ├── config.py                # 环境变量与全局配置管理
+If you want to add support for a new platform (e.g., Zhihu, Weibo):
 
-│   │
+Create a new file in app/scraper/strategies/ (e.g., zhihu.py).
 
-│   ├── ui/                      # [表现层] 用户界面逻辑
+Inherit from the BaseScraper class and implement the scrape method.
 
-│   │   ├── init.py
+Register the new Source type in the interface.
 
-│   │   ├── layout.py            # 通用布局（侧边栏、顶栏）
-
-│   │   ├── pages/               # 页面路由
-
-│   │   │   ├── dashboard.py     # 主控台
-
-│   │   │   ├── sources.py       # 数据源管理
-
-│   │   │   └── settings.py      # 设置页面
-
-│   │   └── components/          # 可复用 UI 组件（日志窗、状态卡片）
-
-│   │
-
-│   ├── core/                    # [应用层] 核心控制逻辑
-
-│   │   ├── task_queue.py        # 简单的内存任务队列（生产者-消费者模式）
-
-│   │   └── scheduler.py         # 定时任务调度（APScheduler）
-
-│   │
-
-│   ├── scraper/                 # [领域层] 爬虫引擎
-
-│   │   ├── init.py
-
-│   │   ├── browser.py           # DrissionPage 浏览器单例管理
-
-│   │   ├── strategies/          # 策略模式实现
-
-│   │   │   ├── base.py          # 抽象基类
-
-│   │   │   ├── xiaohongshu.py   # 小红书具体实现
-
-│   │   │   └── bilibili.py      # Bilibili 具体实现
-
-│   │   └── utils/
-
-│   │       ├── captcha.py       # 滑块验证码求解算法
-
-│   │       └── cookie_jar.py    # Cookie 持久化管理
-
-│   │
-
-│   ├── database/                # [基础设施层] 数据持久化
-
-│   │   ├── engine.py            # 数据库连接引擎
-
-│   │   ├── models.py            # SQLModel 模型定义
-
-│   │   └── crud.py              # 数据库操作封装
-
-│   │
-
-│   ├── ai/                      # [基础设施层] AI 服务
-
-│   │   ├── client.py            # DeepSeek API 客户端封装
-
-│   │   └── prompts.py           # 提示词模板管理
-
-│   │
-
-│   └── rss/                     # [领域层] RSS 生成
-
-│       └── feed_gen.py          # FeedGen 库封装
-
-│
-
-├── migrations/                  # Alembic 数据库迁移脚本
-
-├── data/                        # 运行时数据（SQLite db, logs）
-
-├── assets/                      # 静态资源（图标、字体）
-
-├── requirements.txt             # 依赖清单
-
-├── alembic.ini                  # 迁移配置
-
-└── build.py                     # PyInstaller 打包脚本
-
-此结构的优势在于：
-
-- **分离关注点：** UI 代码与爬虫逻辑完全解耦，修改 UI 不会破坏爬虫，反之亦然。
-- **易于 AI 辅助：** 当请求 AI 编写代码时，可以明确指定“在 `app/scraper/strategies/xiaohongshu.py` 中实现具体逻辑”，减少上下文混淆。
-
-------
-
-
-
-## 4. 核心构建步骤与实现细节
-
-
-
-本节将详细拆解每个模块的实现路径，涵盖关键算法、设计模式应用以及具体的 AI 提示词（Prompt）指导。
-
-
-
-### 步骤一：数据建模与数据库层构建
-
-
-
-**目标：** 定义 `Source`（数据源）和 `ScrapedItem`（抓取内容）模型，并建立关系。
-
-技术细节：
-
-使用 SQLModel 定义表结构。需要特别注意的是 ScrapedItem 表，应包含 AI 分析后的字段（如情感倾向、摘要）。为了支持 RSS 规范，必须存储 pub_date 和 link 10。
-
-**推荐模式：** Repository Pattern（仓储模式），虽然 SQLModel 已经简化了操作，但封装一层 CRUD 函数有助于后续可能的缓存介入。
-
-**代码实现参考：**
-
-Python
-
-```
-# app/database/models.py
-from typing import Optional, List
-from datetime import datetime
-from sqlmodel import SQLModel, Field, Relationship
-
-class Source(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: str
-    platform: str  # 'xiaohongshu' | 'bilibili'
-    frequency: int = 60  # 分钟
-    is_active: bool = True
-    last_scraped: Optional[datetime] = None
-    
-    items: List = Relationship(back_populates="source")
-
-class ScrapedItem(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    source_id: int = Field(foreign_key="source.id")
-    title: str
-    url: str = Field(unique=True)
-    content: str
-    images: str  # JSON string
-    publish_date: datetime
-    
-    # AI Enrichment
-    ai_summary: Optional[str] = None
-    sentiment: Optional[str] = None
-    
-    source: Source = Relationship(back_populates="items")
-```
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "你是一位 Python 后端专家。请基于 SQLModel 库为我编写 `models.py` 文件。我需要两个模型：`Source`（用于存储爬虫任务配置，包含 url, platform, interval 等）和 `ScrapedItem`（用于存储抓取结果，包含 title, content, ai_summary 等）。请建立一对多的关系，并确保 `ScrapedItem` 中的 url 字段是唯一的。另外，请编写一个 `create_db_and_tables` 函数用于初始化 SQLite 数据库。"
-
-------
-
-
-
-### 步骤二：构建 DrissionPage 爬虫引擎
-
-
-
-**目标：** 创建一个能够动态切换策略、自动处理反爬的爬虫核心。
-
-技术细节：
-
-小红书和 Bilibili 的反爬策略主要包括：指纹检测（Canvas/WebGL）、自动化测试工具检测（WebDriver）、IP 频率限制以及行为分析（鼠标轨迹）。DrissionPage 天然解决了前两项。对于行为分析，我们需要实现拟人化鼠标移动算法。
-
-**设计模式：** **策略模式 (Strategy Pattern)**。定义一个 `BaseScraper` 接口，`XiaohongshuScraper` 和 `BilibiliScraper` 分别实现具体的解析逻辑 18。
-
-
-
-#### 4.1 浏览器管理与反指纹配置
-
-
-
-在 `app/scraper/browser.py` 中，我们需要配置 `ChromiumOptions` 以最大化隐蔽性。
-
-Python
-
-```
-from DrissionPage import ChromiumPage, ChromiumOptions
-
-class BrowserManager:
-    _instance = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(BrowserManager, cls).__new__(cls)
-            cls._instance.page = cls._init_page()
-        return cls._instance
-
-    @staticmethod
-    def _init_page():
-        co = ChromiumOptions()
-        # 使用本地用户配置以保留登录状态
-        co.set_user_data_path(r'./data/browser_profile')
-        co.set_argument('--no-sandbox')
-        # 关键：禁用自动化控制特征
-        co.set_argument('--disable-blink-features=AutomationControlled')
-        return ChromiumPage(addr_or_opts=co)
-```
-
-
-
-#### 4.2 拟人化滑块验证码解决方案
-
-
-
-这是本项目的核心难点。简单的 `move_to` 会被识别为机器人。我们需要使用**贝塞尔曲线（Bezier Curve）**或物理加速度模型来生成轨迹 19。
-
-**算法逻辑：**
-
-1. **识别缺口：** 截取滑块图片和背景图片，使用 OpenCV (`cv2.matchTemplate`) 识别缺口 X 坐标。
-2. **轨迹生成：** 不要直线移动。生成一个包含加速、减速、过冲（Overshoot）和回退（Correction）的轨迹数组。
-3. **执行移动：** 使用 DrissionPage 的 `page.actions` 链式调用，在每一步之间插入微小的随机延迟。
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "我正在使用 Python 的 DrissionPage 库处理滑块验证码。请为我编写一个名为 `human_slide_behavior` 的函数。该函数接收 `page` 对象、`slider_element` 和目标距离 `distance`。请实现一个物理模拟算法，生成一个鼠标移动轨迹，轨迹应包含加速阶段、减速阶段、轻微的过冲（超过目标位置一点点）然后回退修正。使用 `page.actions.move()` 按照生成的轨迹移动鼠标，并在每一步加入微小的随机 `wait` 时间，模拟真实人类的手部抖动。"
-
-------
-
-
-
-### 步骤三：集成 DeepSeek 进行内容清洗
-
-
-
-**目标：** 将抓取的杂乱文本转化为高质量的 RSS 摘要。
-
-技术细节：
-
-利用 DeepSeek 的 JSON Output 功能，强制模型返回结构化数据。这对于后续生成 RSS XML 至关重要，因为我们需要确定的字段（如 summary, category）。
-
-提示词工程 (Prompt Engineering):
-
-DeepSeek 模型（尤其是 R1）对 System Prompt 的指令遵循度很高。我们需要明确定义 JSON Schema 13。
-
-**代码实现参考：**
-
-Python
-
-```
-# app/ai/client.py
-from openai import OpenAI
-import json
-
-class AIProcessor:
-    def __init__(self, api_key):
-        self.client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
-    
-    def analyze(self, text):
-        prompt = """
-        你是一个社交媒体内容分析师。请分析以下文本，并以严格的 JSON 格式输出：
-        {
-            "summary": "一句话摘要，不超过50字",
-            "sentiment": "Positive/Neutral/Negative",
-            "keywords":,
-            "is_ad": boolean (是否为广告)
-        }
-        """
-        response = self.client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": text}
-            ],
-            response_format={'type': 'json_object'} # 关键设置
-        )
-        return json.loads(response.choices.message.content)
-```
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "请编写一个封装 DeepSeek API 的 Python 类。使用 `openai` SDK。实现一个 `process_content` 方法，接收原始文本，调用 API 并要求返回 JSON 格式。System Prompt 应该要求模型提取摘要、情感倾向和关键词。请包含错误处理逻辑（如 JSON 解析失败时的重试机制）。"
-
-------
-
-
-
-### 步骤四：构建 NiceGUI 前端界面
-
-
-
-**目标：** 提供一个现代化的、响应式的操作面板。
-
-技术细节：
-
-NiceGUI 的核心是基于事件驱动的。我们需要利用 ui.timer 来定期刷新任务状态，利用 ui.run_with 来处理后台任务，避免阻塞主 UI 线程 1。
-
-**布局设计：**
-
-- **左侧侧边栏：** 导航菜单（仪表盘、源管理、日志）。
-- **主区域：** 使用 `ui.table` 展示抓取结果，支持分页和搜索。
-- **控制台：** 使用 `ui.log` 实时输出爬虫运行日志。
-
-原生模式 (Native Mode) 实现：
-
-为了让应用看起来像本地软件，需要在启动时配置 native=True。这会在后台启动一个轻量级的 WebView 窗口 9。
-
-Python
-
-```
-# app/main.py
-from nicegui import ui
-from app.ui.layout import create_layout
-
-@ui.page('/')
-def index():
-    with create_layout():
-        ui.label('Smart Scraper RSS').classes('text-2xl font-bold')
-        # 数据表格
-        columns = [
-            {'name': 'title', 'label': '标题', 'field': 'title'},
-            {'name': 'ai_summary', 'label': 'AI 摘要', 'field': 'ai_summary'},
-            {'name': 'sentiment', 'label': '情感', 'field': 'sentiment'},
-        ]
-        ui.table(columns=columns, rows=, row_key='id').classes('w-full')
-
-# 启动配置：原生模式，指定窗口大小，禁用重载（生产环境）
-ui.run(native=True, title="Smart Scraper", window_size=(1200, 800), reload=False)
-```
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "我正在使用 Python 的 NiceGUI 库构建仪表盘。请帮我写一个 `layout.py` 模块。它应该包含一个带有侧边栏和顶部导航栏的通用框架。侧边栏应包含图标和链接。主内容区域应是可变的。请使用 Tailwind CSS 类来美化界面（例如 `bg-gray-100`, `p-4` 等）。"
-
-------
-
-
-
-### 步骤五：RSS 生成与服务
-
-
-
-**目标：** 将清洗后的数据暴露为标准的 RSS XML 接口。
-
-技术细节：
-
-使用 python-feedgen 库。FastAPI（NiceGUI 的底层）可以直接挂载一个路由来提供 XML 文件下载或在线访问 23。
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "请编写一个函数，使用 `feedgen` 库生成 RSS 2.0 源。输入是一个包含字典的列表（每个字典有 title, link, description, pubDate）。函数应生成 XML 字符串。特别注意：`pubDate` 需要包含时区信息。请展示如何将此函数集成到 FastAPI 的路由中，使其可以通过 `/feed.xml` 访问。"
-
-------
-
-
-
-## 5. 部署与交付工程 (Deployment Engineering)
-
-
-
-为了让非技术用户也能使用，必须将复杂的 Python 环境打包为可执行文件。
-
-
-
-### 5.1 PyInstaller 打包策略
-
-
-
-NiceGUI 的打包比普通脚本复杂，因为需要包含静态资源和模板文件。
-
-**核心配置：**
-
-1. **--add-data:** 必须包含 NiceGUI 的前端资产。
-2. **--windowed:** 隐藏控制台窗口（仅在 Windows 有效）。
-3. **Entry Point:** 确保 `ui.run()` 在 `if __name__ == "__main__":` 块中调用。
-
-**build.py 脚本示例：**
-
-Python
-
-```
-import subprocess
-from pathlib import Path
-import nicegui
-
-cmd =
-subprocess.call(cmd)
-```
-
-**🤖 AI 构建提示词 (Prompt):**
-
-> "我需要将一个 NiceGUI 应用打包成单个 EXE 文件。请提供一个 `build.py` 脚本。脚本需要自动找到 `nicegui` 库的安装路径，并将其作为 `--add-data` 参数传递给 PyInstaller。请确保处理 Windows 和 Linux 路径分隔符的差异。"
-
-------
-
-
-
-## 6. 高级反爬对抗策略深入解析
-
-
-
-在实现基础功能后，为了应对 2025 年级别的防护，必须引入以下高级机制：
-
-
-
-### 6.1 动态代理池与 IP 轮转
-
-
-
-简单的请求极易被封锁 IP。必须集成代理服务（如 Bright Data 或 ScraperAPI，或者自建的代理池）。
-
-- **实现：** 在 `BrowserManager` 中，为每个新页面上下文或每隔 N 次请求更换代理 IP。DrissionPage 支持在 `ChromiumOptions` 中设置 `--proxy-server` 25。
-
-
-
-### 6.2 本地存储与 Cookie 复用
-
-
-
-小红书等平台对“冷启动”账号（无历史行为）非常敏感 26。
-
-- **策略：** 首次运行时引导用户手动登录。之后，将 `browser_profile`（用户数据目录）持久化存储。DrissionPage 默认支持加载用户配置文件，这样可以保持 Cookie 和 LocalStorage，使得爬虫看起来像一个“回访的老用户”而非“新访客” 7。
-
-
-
-### 6.3 流量池测试模拟
-
-
-
-根据研究 26，小红书算法会进行“流量池测试”。爬虫不仅要“看”，有时需要模拟“互动”（如滚动到底部、随机点击图片查看详情），以增加账号的权重（Trust Score），防止被判定为僵尸号。
-
-------
-
-
-
-## 7. 结论
-
-
-
-通过本手册的指导，我们将从零构建一个企业级的个人数据聚合工具。**DrissionPage** 赋予了它穿透现代 Web 防御的能力，**DeepSeek** 赋予了它理解内容的智慧，而 **NiceGUI** 与 **SQLModel** 则保证了开发的高效与架构的稳健。
-
-这不仅仅是一次代码重构，更是一次从“脚本小子”思维向“软件工程”思维的跨越。最终交付的将不再是一个脆弱的 `.py` 文件，而是一个拥有图形界面、具备自我恢复能力且智能化的桌面应用程序。
+© 2025 Smart Scraper RSS

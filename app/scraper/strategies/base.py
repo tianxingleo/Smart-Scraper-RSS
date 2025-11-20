@@ -22,21 +22,31 @@ class BaseScraper(ABC):
         """
         try:
             # 1. 获取缺口位置
-            # 注意：这里简化处理，如果没有背景图或无法计算，假设一个随机位置或需要额外逻辑
-            # 实际项目中需要下载图片并使用 OpenCV 计算 gap_position
-            # 这里为了演示，假设我们能获取到 gap (或者通过 js 获取)
+            gap_position = 200 # 默认值
             
-            # 模拟：如果无法计算，尝试简单的拖拽或者直接报错
-            # 在实际反爬中，通常需要下载 bg_ele 的图片，然后用 cv2.matchTemplate 识别缺口
-            
-            # 临时方案：尝试获取滑块容器宽度作为最大距离的参考
-            # 真正的解决方案需要集成 OpenCV 识别逻辑
-            gap_position = 200 # 默认值，实际应计算
-            
-            # 如果有背景图，尝试计算 (伪代码/预留接口)
-            # if bg_ele:
-            #    bg_img = bg_ele.src()
-            #    gap_position = calculate_gap(bg_img)
+            if bg_ele:
+                try:
+                    # 获取背景图和滑块图的字节流
+                    bg_bytes = bg_ele.src() # DrissionPage 可以直接获取资源内容，或者需要用 requests 下载
+                    # 注意：如果 src 是 URL，需要下载。如果是 base64，需要解码。
+                    # DrissionPage 的 .src() 返回的是 URL。
+                    # 我们可以尝试截图或者用 page.download 获取
+                    
+                    # 简单起见，这里假设我们能通过 screenshot 获取元素图片
+                    # 或者直接用 src 下载
+                    import requests
+                    bg_url = bg_ele.attr('src')
+                    slider_url = slider_ele.attr('src')
+                    
+                    if bg_url and slider_url:
+                        bg_resp = requests.get(bg_url)
+                        slider_resp = requests.get(slider_url)
+                        
+                        if bg_resp.status_code == 200 and slider_resp.status_code == 200:
+                             gap_position = captcha_solver.identify_gap(bg_resp.content, slider_resp.content)
+                             print(f"Calculated gap position: {gap_position}")
+                except Exception as e:
+                    print(f"Failed to calculate gap: {e}")
             
             # 2. 生成轨迹
             track, delays = captcha_solver.solve(gap_position)

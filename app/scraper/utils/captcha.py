@@ -137,5 +137,52 @@ class CaptchaSolver:
         
         return track, delays
 
+    def identify_gap(self, bg_bytes: bytes, slider_bytes: bytes) -> int:
+        """
+        识别缺口位置
+        
+        Args:
+            bg_bytes: 背景图片字节流
+            slider_bytes: 滑块图片字节流
+            
+        Returns:
+            缺口 X 坐标
+        """
+        try:
+            import cv2
+            
+            # 字节流转 numpy 数组
+            bg_arr = np.frombuffer(bg_bytes, np.uint8)
+            slider_arr = np.frombuffer(slider_bytes, np.uint8)
+            
+            # 解码为图像
+            bg_img = cv2.imdecode(bg_arr, cv2.IMREAD_COLOR)
+            slider_img = cv2.imdecode(slider_arr, cv2.IMREAD_COLOR)
+            
+            # 边缘检测 (Canny)
+            bg_edge = cv2.Canny(bg_img, 100, 200)
+            slider_edge = cv2.Canny(slider_img, 100, 200)
+            
+            # 转换图片格式
+            bg_pic = cv2.cvtColor(bg_edge, cv2.COLOR_GRAY2RGB)
+            slider_pic = cv2.cvtColor(slider_edge, cv2.COLOR_GRAY2RGB)
+            
+            # 模板匹配
+            res = cv2.matchTemplate(bg_pic, slider_pic, cv2.TM_CCOEFF_NORMED)
+            
+            # 获取最佳匹配位置
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            
+            # max_loc 是最佳匹配的左上角坐标 (x, y)
+            # 通常滑块验证码只需要 X 坐标
+            return max_loc[0]
+            
+        except ImportError:
+            print("OpenCV not installed. Please install opencv-python.")
+            return 200 # Fallback
+        except Exception as e:
+            print(f"Gap identification failed: {e}")
+            return 200 # Fallback
+
 # 全局实例
 captcha_solver = CaptchaSolver()

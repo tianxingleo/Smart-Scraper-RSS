@@ -105,6 +105,20 @@ def settings_page():
             ui.label(f'队列中的任务: {queue_size} 个').classes('text-lg')
             ui.label(f'工作线程数: 2').classes('text-lg')
         
+        # 浏览器登录
+        with ui.card().classes('w-full p-4 mb-4'):
+            ui.label('🌐 浏览器登录').classes('text-xl font-bold mb-4')
+            ui.label('首次使用建议手动登录以获取 Cookie，提高抓取成功率。').classes('text-sm text-gray-600 mb-2')
+            
+            from app.services.scraper_service import open_login_browser
+            
+            def handle_open_browser():
+                open_login_browser()
+                ui.notify('浏览器已打开，请手动登录目标网站', type='positive')
+            
+            ui.button('打开浏览器 (手动登录)', on_click=handle_open_browser, icon='login', color='accent')
+            ui.label('注意：如果配置了 Headless 模式，请先在 .env 中关闭它，否则看不到窗口。').classes('text-xs text-red-500 mt-1')
+
         # 系统配置
         with ui.card().classes('w-full p-4'):
             ui.label('🔧 系统配置').classes('text-xl font-bold mb-4')

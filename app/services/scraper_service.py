@@ -52,3 +52,25 @@ def scrape_source(source_id: int):
 def scrape_source_async(source_id: int):
     """异步抓取源（供调度器调用）"""
     task_queue.add_task(scrape_source, source_id)
+
+def open_login_browser():
+    """打开浏览器进行手动登录"""
+    from app.scraper.browser import BrowserManager
+    import time
+    
+    try:
+        browser = BrowserManager()
+        # 获取一个新标签页
+        tab = browser.get_new_tab()
+        
+        # 导航到一个导航页或直接打开小红书/B站
+        tab.get('https://www.xiaohongshu.com')
+        
+        # 提示用户
+        logger.info("Browser opened for login. Please login manually.")
+        
+        # 注意：如果浏览器是 headless 模式，用户将看不到窗口。
+        # 实际生产中可能需要检测并提示用户关闭 headless 模式，或者重启浏览器实例。
+        
+    except Exception as e:
+        logger.error(f"Failed to open login browser: {e}")

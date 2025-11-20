@@ -21,11 +21,16 @@ class BrowserManager:
         # Anti-detection
         co.set_argument('--disable-blink-features=AutomationControlled')
         
+        # Headless Configuration
+        if settings.BROWSER_HEADLESS:
+            co.headless(True)
+        
         # Proxy Configuration
         if settings.PROXY_SERVER:
             co.set_argument(f'--proxy-server={settings.PROXY_SERVER}')
             
         return ChromiumPage(addr_or_opts=co)
 
-    def get_page(self):
-        return self.page
+    def get_new_tab(self):
+        """获取一个新的标签页用于抓取任务"""
+        return self.page.new_tab()
