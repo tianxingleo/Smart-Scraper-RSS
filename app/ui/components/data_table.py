@@ -8,7 +8,7 @@ def enhanced_table(
     on_edit: Optional[Callable] = None,
     on_delete: Optional[Callable] = None,
     on_action: Optional[Callable] = None,
-    action_label: str = '操作'
+    action_label: str = 'ACTIONS'
 ):
     """
     创建增强的数据表格
@@ -27,7 +27,7 @@ def enhanced_table(
     # 添加操作列
     if on_edit or on_delete or on_action:
         columns_with_actions = columns + [
-            {'name': 'actions', 'label': '操作', 'field': 'actions', 'align': 'center'}
+            {'name': 'actions', 'label': action_label, 'field': 'actions', 'align': 'center'}
         ]
     else:
         columns_with_actions = columns
@@ -37,7 +37,7 @@ def enhanced_table(
         rows=rows,
         row_key='id',
         pagination=10
-    ).classes('w-full glass-panel rounded-2xl overflow-hidden') # 应用玻璃类
+    ).classes('w-full glass-panel rounded-2xl overflow-hidden')
     
     # 关键：使用 props 强制 Quasar 表格透明并使用深色模式
     table.props('flat bordered dark')
@@ -53,19 +53,24 @@ def enhanced_table(
     
     # 添加操作按钮槽
     if on_edit or on_delete or on_action:
-        def create_action_buttons(row):
-            with ui.row().classes('gap-2'):
-                if on_action:
-                    ui.button(action_label, on_click=lambda r=row: on_action(r)).classes('text-xs').props('flat color=primary')
-                if on_edit:
-                    ui.button('编辑', on_click=lambda r=row: on_edit(r)).classes('text-xs').props('flat color=primary')
-                if on_delete:
-                    ui.button('删除', on_click=lambda r=row: on_delete(r)).classes('text-xs').props('flat color=negative')
-        
-        table.add_slot('body-cell-actions', '''
+        table.add_slot('body-cell-actions', r'''
             <q-td key="actions" :props="props">
-                <div id="actions-container"></div>
+                <div class="flex gap-2 justify-center">
+        ''' + 
+        (f'''<q-btn flat dense size="sm" color="purple" label="Edit" @click="$parent.$emit('edit', props.row)" />''' if on_edit else '') +
+        (f'''<q-btn flat dense size="sm" color="red" label="Delete" @click="$parent.$emit('delete', props.row)" />''' if on_delete else '') +
+        (f'''<q-btn flat dense size="sm" color="cyan" label="{action_label}" @click="$parent.$emit('action', props.row)" />''' if on_action else '') +
+        '''
+                </div>
             </q-td>
         ''')
+        
+        # 绑定事件
+        if on_edit:
+            table.on('edit', lambda e: on_edit(e.args))
+        if on_delete:
+            table.on('delete', lambda e: on_delete(e.args))
+        if on_action:
+            table.on('action', lambda e: on_action(e.args))
     
     return table

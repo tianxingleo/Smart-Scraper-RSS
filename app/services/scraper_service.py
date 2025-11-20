@@ -1,8 +1,9 @@
 import logging
-from sqlmodel import Session
+import os
+from sqlmodel import Session, select
 from app.database import engine
-from app.database.models import Source
-from app.database.crud import update_source_last_scraped, item_exists
+from app.database.models import Source, ScrapedItem
+from app.database.crud import update_source_last_scraped
 from app.scraper.strategies import BilibiliScraper, XiaohongshuScraper, XiaoheiheScraper, CoolAPKScraper
 from app.ai.client import AIProcessor
 from app.core import task_queue
@@ -18,10 +19,8 @@ def scrape_source(source_id: int):
             logger.error(f'源不存在: {source_id}')
             return
         
-        # 去重检查
-        if item_exists(source.url):
-            logger.info(f'URL已存在，跳过: {source.url}')
-            return
+        # 注意：这里不需要检查 source.url 是否存在于 ScrapedItem
+        # 因为 ScrapedItem 存的是具体的帖子/视频 URL，而 source.url 是列表页/主页 URL
         
         # 选择爬虫
         if source.platform == 'bilibili':
@@ -40,28 +39,47 @@ def scrape_source(source_id: int):
             item = scraper.scrape(source.url)
             item.source_id = source_id
             
+            # === 关键修复：入库前检查 item.url 是否已存在 ===
+            # 1. 检查无效标题
+            if item.title == '无标题':
+                logger.warning(f'⚠️ 抓取失败 (无标题), 跳过入库: {item.url}')
+                return
+
+            statement = select(ScrapedItem).where(ScrapedItem.url == item.url)
+            existing_item = session.exec(statement).first()
+            
+            if existing_item:
+                logger.info(f'⏭️ 内容已存在，跳过入库: {item.title} ({item.url})')
+                # 即使跳过入库，也更新一下源的最后抓取时间
+                update_source_last_scraped(source_id)
+                return
+
             # AI 分析
-            try:
-                ai = AIProcessor()
-                analysis = ai.analyze(item.content)
-                item.ai_summary = analysis.get('summary', '分析失败')
-                item.sentiment = analysis.get('sentiment', 'Neutral')
-                item.ai_score = analysis.get('score', 0)
-                item.risk_level = analysis.get('risk_level', 'Unknown')
-            except Exception as e:
-                logger.error(f'AI 分析失败: {e}')
-                item.ai_summary = '分析失败'
-                item.sentiment = 'Neutral'
-                item.ai_score = 0
-                item.risk_level = 'Unknown'
+            if os.getenv("DEEPSEEK_API_KEY"):
+                try:
+                    ai = AIProcessor()
+                    analysis = ai.analyze(item.content)
+                    item.ai_summary = analysis.get('summary', '分析失败')
+                    item.sentiment = analysis.get('sentiment', 'Neutral')
+                    item.ai_score = analysis.get('score', 0)
+                    item.risk_level = analysis.get('risk_level', 'Unknown')
+                except Exception as e:
+                    logger.error(f'AI 分析异常: {e}')
+                    item.ai_summary = 'AI 服务暂时不可用'
+                    item.sentiment = 'Neutral'
+            else:
+                logger.warning(f'⚠️ 未配置 DEEPSEEK_API_KEY，跳过 AI 分析')
+                item.ai_summary = '未配置 AI Key'
             
             session.add(item)
             update_source_last_scraped(source_id)
             session.commit()
             
-            logger.info(f'✅ 抓取成功: {item.title}')
+            logger.info(f'✅ 抓取并入库成功: {item.title}')
+            
         except Exception as e:
-            logger.error(f'❌ 抓取失败 [源ID={source_id}]: {str(e)}')
+            # 捕获所有异常，防止 crash 导致调度器挂掉
+            logger.error(f'❌ 抓取流程异常 [源ID={source_id}]: {str(e)}')
 
 def scrape_source_async(source_id: int):
     """异步抓取源（供调度器调用）"""
@@ -70,21 +88,10 @@ def scrape_source_async(source_id: int):
 def open_login_browser():
     """打开浏览器进行手动登录"""
     from app.scraper.browser import BrowserManager
-    import time
-    
     try:
         browser = BrowserManager()
-        # 获取一个新标签页
         tab = browser.get_new_tab()
-        
-        # 导航到一个导航页或直接打开小红书/B站
         tab.get('https://www.xiaohongshu.com')
-        
-        # 提示用户
-        logger.info("Browser opened for login. Please login manually.")
-        
-        # 注意：如果浏览器是 headless 模式，用户将看不到窗口。
-        # 实际生产中可能需要检测并提示用户关闭 headless 模式，或者重启浏览器实例。
-        
+        logger.info("Browser opened for login.")
     except Exception as e:
         logger.error(f"Failed to open login browser: {e}")

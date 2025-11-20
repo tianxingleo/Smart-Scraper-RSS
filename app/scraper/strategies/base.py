@@ -22,31 +22,21 @@ class BaseScraper(ABC):
         """
         try:
             # 1. 获取缺口位置
-            gap_position = 200 # 默认值
+            gap_position = 200  # 默认值
             
-            if bg_ele:
+            if bg_ele and slider_ele:
                 try:
-                    # 获取背景图和滑块图的字节流
-                    bg_bytes = bg_ele.src() # DrissionPage 可以直接获取资源内容，或者需要用 requests 下载
-                    # 注意：如果 src 是 URL，需要下载。如果是 base64，需要解码。
-                    # DrissionPage 的 .src() 返回的是 URL。
-                    # 我们可以尝试截图或者用 page.download 获取
+                    # 改进：直接使用 DrissionPage 的截图功能获取 bytes
+                    # 这比 requests.get 更安全，因为它使用的是浏览器已经渲染好的画面
+                    # 且自动携带了所有 Cookie 和 Session 信息
+                    bg_bytes = bg_ele.screenshot_as_bytes()
+                    slider_bytes = slider_ele.screenshot_as_bytes()
                     
-                    # 简单起见，这里假设我们能通过 screenshot 获取元素图片
-                    # 或者直接用 src 下载
-                    import requests
-                    bg_url = bg_ele.attr('src')
-                    slider_url = slider_ele.attr('src')
-                    
-                    if bg_url and slider_url:
-                        bg_resp = requests.get(bg_url)
-                        slider_resp = requests.get(slider_url)
-                        
-                        if bg_resp.status_code == 200 and slider_resp.status_code == 200:
-                             gap_position = captcha_solver.identify_gap(bg_resp.content, slider_resp.content)
-                             print(f"Calculated gap position: {gap_position}")
+                    if bg_bytes and slider_bytes:
+                         gap_position = captcha_solver.identify_gap(bg_bytes, slider_bytes)
+                         print(f"Calculated gap position: {gap_position}")
                 except Exception as e:
-                    print(f"Failed to calculate gap: {e}")
+                    print(f"Failed to calculate gap (using default): {e}")
             
             # 2. 生成轨迹
             track, delays = captcha_solver.solve(gap_position)

@@ -1,7 +1,7 @@
 """全局配置管理"""
 import os
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """应用配置"""
@@ -36,9 +36,12 @@ class Settings(BaseSettings):
     RSS_FEED_DESCRIPTION: str = "智能内容聚合 RSS"
     RSS_MAX_ITEMS: int = 50
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    # 使用新版配置写法
+    model_config = SettingsConfigDict(
+        env_file='.env', 
+        env_file_encoding='utf-8', 
+        extra='ignore'
+    )
 
 # 全局配置实例
 settings = Settings()
