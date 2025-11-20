@@ -114,6 +114,86 @@ APScheduler
 
 [ ] 完善动态代理池支持。
 
+📅 详细开发计划与实施路径 (Detailed Development Plan)
+
+为了实现项目的最终愿景，我们将后续开发任务拆分为三个核心阶段。以下是每个功能的具体实施路径与代码分块规划。
+
+第一阶段：核心加固 (Phase 1: Core Hardening)
+
+目标：完善现有的 B站/小红书爬虫，实现“真”反爬与深度内容提取。
+
+1.1 B站字幕提取 (Bilibili Subtitle Extraction)
+
+实施路径:
+
+修改 app/scraper/strategies/bilibili.py。
+
+在 scrape 方法开头使用 page.listen.start('api.bilibili.com/x/player/v2') 开启数据包监听。
+
+刷新页面触发请求，捕获响应包。
+
+解析 JSON 获取 subtitle_url，下载并清洗为纯文本，合并到 item.content 中。
+
+涉及文件: app/scraper/strategies/bilibili.py
+
+1.2 OpenCV 真实验证码识别 (Real Captcha Solving)
+
+实施路径:
+
+完善 app/scraper/utils/captcha.py 中的 identify_gap 函数。
+
+使用 requests 下载背景图与滑块图。
+
+利用 cv2.Canny 进行边缘检测，再使用 cv2.matchTemplate 寻找缺口最佳匹配位置 (X坐标)。
+
+将计算出的真实 gap 传递给轨迹生成函数。
+
+涉及文件: app/scraper/utils/captcha.py, requirements.txt (需确保 opencv-python 已安装)
+
+第二阶段：AI 智能进化 (Phase 2: AI Evolution)
+
+目标：从简单的“总结”进化为“价值判断”，让 AI 帮用户通过分数筛选内容。
+
+2.1 评分系统架构 (Scoring System Architecture)
+
+实施路径:
+
+数据库升级: 在 app/database/models.py 的 ScrapedItem 模型中新增 ai_score (int) 和 risk_level (str) 字段。
+
+Prompt 优化: 修改 app/ai/prompts.py，要求 AI 输出 JSON 中包含 "score": 0-100 和 "risk_level": "High/Medium/Low"。
+
+解析逻辑: 更新 app/ai/client.py 以解析新增的 JSON 字段并存入数据库。
+
+涉及文件: app/database/models.py, app/ai/prompts.py, app/ai/client.py
+
+2.2 RSS 智能风控过滤 (Smart RSS Filtering)
+
+实施路径:
+
+修改 app/rss/feed_gen.py 中的 add_items 方法。
+
+增加过滤逻辑：if item.ai_score < 60 or item.risk_level == 'High': continue。
+
+这将确保生成的 RSS Feed 中只包含高质量、无风险的内容。
+
+涉及文件: app/rss/feed_gen.py
+
+第三阶段：生态扩展 (Phase 3: Ecosystem Expansion)
+
+目标：接入更多高质量信息源，构建全方位的聚合中心。
+
+3.1 新平台适配 (New Platforms)
+
+实施路径:
+
+小黑盒 (Xiaoheihe): 创建 app/scraper/strategies/xiaoheihe.py，针对游戏资讯 DOM 结构进行解析。
+
+酷安 (CoolAPK): 创建 app/scraper/strategies/coolapk.py，处理数码社区的动态加载列表。
+
+注册策略: 在 app/services/scraper_service.py 的工厂模式中注册这两个新策略。
+
+涉及文件: app/scraper/strategies/*.py, app/services/scraper_service.py
+
 💻 快速开始
 
 1. 环境准备
@@ -284,6 +364,86 @@ Stable and robust background task management supporting multi-threaded concurren
 [ ] Integrate OpenCV for real slider gap recognition (currently simulated).
 
 [ ] Perfect dynamic proxy pool support.
+
+📅 Detailed Development Plan
+
+To achieve the final vision of the project, we split the subsequent development tasks into three core phases. Below is the specific implementation path and code block planning for each function.
+
+Phase 1: Core Hardening
+
+Goal: Perfect the existing Bilibili/Xiaohongshu scrapers to achieve "real" anti-scraping and deep content extraction.
+
+1.1 Bilibili Subtitle Extraction
+
+Implementation Path:
+
+Modify app/scraper/strategies/bilibili.py.
+
+Start packet listening at the beginning of the scrape method using page.listen.start('api.bilibili.com/x/player/v2').
+
+Refresh the page to trigger requests and capture response packets.
+
+Parse JSON to get subtitle_url, download and clean it into plain text, and merge it into item.content.
+
+Files Involved: app/scraper/strategies/bilibili.py
+
+1.2 Real Captcha Solving (OpenCV)
+
+Implementation Path:
+
+Refine the identify_gap function in app/scraper/utils/captcha.py.
+
+Use requests to download the background and slider images.
+
+Use cv2.Canny for edge detection, then use cv2.matchTemplate to find the best matching position (X coordinate) of the gap.
+
+Pass the calculated real gap to the trajectory generation function.
+
+Files Involved: app/scraper/utils/captcha.py, requirements.txt (ensure opencv-python is installed)
+
+Phase 2: AI Evolution
+
+Goal: Evolve from simple "summarization" to "value judgment", allowing AI to help users filter content via scores.
+
+2.1 Scoring System Architecture
+
+Implementation Path:
+
+Database Upgrade: Add ai_score (int) and risk_level (str) fields to the ScrapedItem model in app/database/models.py.
+
+Prompt Optimization: Modify app/ai/prompts.py to require AI to output "score": 0-100 and "risk_level": "High/Medium/Low" in JSON.
+
+Parsing Logic: Update app/ai/client.py to parse the new JSON fields and save them to the database.
+
+Files Involved: app/database/models.py, app/ai/prompts.py, app/ai/client.py
+
+2.2 Smart RSS Filtering
+
+Implementation Path:
+
+Modify the add_items method in app/rss/feed_gen.py.
+
+Add filtering logic: if item.ai_score < 60 or item.risk_level == 'High': continue.
+
+This ensures that the generated RSS Feed only contains high-quality, risk-free content.
+
+Files Involved: app/rss/feed_gen.py
+
+Phase 3: Ecosystem Expansion
+
+Goal: Access more high-quality information sources to build a comprehensive aggregation hub.
+
+3.1 New Platforms Adaptation
+
+Implementation Path:
+
+Xiaoheihe: Create app/scraper/strategies/xiaoheihe.py to parse the DOM structure of game news.
+
+CoolAPK: Create app/scraper/strategies/coolapk.py to handle the dynamically loaded lists of the digital community.
+
+Register Strategy: Register these two new strategies in the factory pattern in app/services/scraper_service.py.
+
+Files Involved: app/scraper/strategies/*.py, app/services/scraper_service.py
 
 💻 Quick Start
 

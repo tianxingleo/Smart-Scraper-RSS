@@ -1,0 +1,7 @@
+2025/11/20-10:55:45.588 16704 Reusing MANIFEST C:\Users\TX\Documents\Coding\projects\Smart-Scraper-RSS\data\browser_profile\Default\IndexedDB\https_www.xiaoheihe.cn_0.indexeddb.leveldb/MANIFEST-000001
+2025/11/20-10:55:45.589 16704 Recovering log #3
+2025/11/20-10:55:45.590 16704 Reusing old log C:\Users\TX\Documents\Coding\projects\Smart-Scraper-RSS\data\browser_profile\Default\IndexedDB\https_www.xiaoheihe.cn_0.indexeddb.leveldb/000003.log 
+2025/11/20-10:55:45.652 b4a4 Level-0 table #5: started
+2025/11/20-10:55:45.661 b4a4 Level-0 table #5: 3388 bytes OK
+2025/11/20-10:55:45.667 b4a4 Delete type=0 #3
+2025/11/20-10:55:45.668 b4a4 Manual compaction at level-0 from '\x00\x03\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x04\x00\x00\x00' @ 0 : 0; will stop at (end)

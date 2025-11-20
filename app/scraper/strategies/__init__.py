@@ -1,6 +1,7 @@
-# Scraper strategies package
-from app.scraper.strategies.base import BaseScraper
-from app.scraper.strategies.bilibili import BilibiliScraper
-from app.scraper.strategies.xiaohongshu import XiaohongshuScraper
+from .base import BaseScraper
+from .bilibili import BilibiliScraper
+from .xiaohongshu import XiaohongshuScraper
+from .xiaoheihe import XiaoheiheScraper
+from .coolapk import CoolAPKScraper
 
-__all__ = ['BaseScraper', 'BilibiliScraper', 'XiaohongshuScraper']
+__all__ = ['BaseScraper', 'BilibiliScraper', 'XiaohongshuScraper', 'XiaoheiheScraper', 'CoolAPKScraper']

@@ -29,6 +29,8 @@ class ScrapedItem(SQLModel, table=True):
     # AI 增强字段
     ai_summary: Optional[str] = None
     sentiment: Optional[str] = None
+    ai_score: int = Field(default=0)  # 内容评分 (0-100)
+    risk_level: str = Field(default="Unknown")  # 风险等级 (High/Medium/Low)
     
     # 关系
     source: Source = Relationship(back_populates="items")

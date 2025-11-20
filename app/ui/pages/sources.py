@@ -35,7 +35,7 @@ def show_add_source_dialog():
         name_input = ui.input('源名称', placeholder='例如：我的 B 站收藏').classes('w-full')
         url_input = ui.input('URL', placeholder='https://...').classes('w-full')
         platform_select = ui.select(
-            ['bilibili', 'xiaohongshu'],
+            ['bilibili', 'xiaohongshu', 'xiaoheihe', 'coolapk'],
             label='平台',
             value='bilibili'
         ).classes('w-full')

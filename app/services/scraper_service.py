@@ -3,7 +3,7 @@ from sqlmodel import Session
 from app.database import engine
 from app.database.models import Source
 from app.database.crud import update_source_last_scraped, item_exists
-from app.scraper.strategies import BilibiliScraper, XiaohongshuScraper
+from app.scraper.strategies import BilibiliScraper, XiaohongshuScraper, XiaoheiheScraper, CoolAPKScraper
 from app.ai.client import AIProcessor
 from app.core import task_queue
 
@@ -24,7 +24,17 @@ def scrape_source(source_id: int):
             return
         
         # 选择爬虫
-        scraper = BilibiliScraper() if source.platform == 'bilibili' else XiaohongshuScraper()
+        if source.platform == 'bilibili':
+            scraper = BilibiliScraper()
+        elif source.platform == 'xiaohongshu':
+            scraper = XiaohongshuScraper()
+        elif source.platform == 'xiaoheihe':
+            scraper = XiaoheiheScraper()
+        elif source.platform == 'coolapk':
+            scraper = CoolAPKScraper()
+        else:
+            logger.error(f'未知的平台类型: {source.platform}')
+            return
         
         try:
             item = scraper.scrape(source.url)
@@ -36,10 +46,14 @@ def scrape_source(source_id: int):
                 analysis = ai.analyze(item.content)
                 item.ai_summary = analysis.get('summary', '分析失败')
                 item.sentiment = analysis.get('sentiment', 'Neutral')
+                item.ai_score = analysis.get('score', 0)
+                item.risk_level = analysis.get('risk_level', 'Unknown')
             except Exception as e:
                 logger.error(f'AI 分析失败: {e}')
                 item.ai_summary = '分析失败'
                 item.sentiment = 'Neutral'
+                item.ai_score = 0
+                item.risk_level = 'Unknown'
             
             session.add(item)
             update_source_last_scraped(source_id)

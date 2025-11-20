@@ -35,8 +35,21 @@ def enhanced_table(
     table = ui.table(
         columns=columns_with_actions,
         rows=rows,
-        row_key='id'
-    ).classes('w-full')
+        row_key='id',
+        pagination=10
+    ).classes('w-full glass-panel rounded-2xl overflow-hidden') # 应用玻璃类
+    
+    # 关键：使用 props 强制 Quasar 表格透明并使用深色模式
+    table.props('flat bordered dark')
+    
+    # 自定义表头颜色 (Tailwind)
+    table.add_slot('header', r'''
+        <q-tr :props="props" class="bg-white/5 text-cyan-300 font-bold uppercase text-xs tracking-wider">
+            <q-th v-for="col in props.cols" :key="col.name" :props="props">
+                {{ col.label }}
+            </q-th>
+        </q-tr>
+    ''')
     
     # 添加操作按钮槽
     if on_edit or on_delete or on_action:

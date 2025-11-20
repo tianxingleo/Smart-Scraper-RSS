@@ -44,5 +44,7 @@ class AIProcessor:
                 "sentiment": "Neutral",
                 "keywords": [],
                 "is_ad": False,
-                "category": "其他"
+                "category": "其他",
+                "score": 0,
+                "risk_level": "Unknown"
             }
