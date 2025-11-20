@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     BROWSER_HEADLESS: bool = False
     BROWSER_USER_DATA_PATH: str = "./data/browser_profile"
     DEFAULT_SCRAPE_FREQUENCY: int = 60  # 分钟
+    PROXY_SERVER: Optional[str] = None  # 代理服务器地址，例如 "http://127.0.0.1:7890"
     
     # UI 配置
     UI_PORT: int = 8080

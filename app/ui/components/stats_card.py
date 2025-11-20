@@ -8,12 +8,13 @@ def stats_card(title: str, value: int, icon: str, color: str = 'blue'):
     Args:
         title: 卡片标题
         value: 显示的数值
-        icon: Material Design 图标名称
+        icon: Material Design 图标名称（不需要 mdi- 前缀）
         color: 主题颜色
     """
     with ui.card().classes('p-4 min-w-[200px] hover:shadow-lg transition-shadow'):
-        with ui.row().classes('items-center justify-between w-full'):
+        with ui.row().classes('items-center gap-4 w-full'):
+            # 图标在左边
+            ui.icon(f'mdi-{icon}').classes(f'text-5xl text-{color}-500')
             with ui.column().classes('gap-1'):
                 ui.label(title).classes('text-sm text-gray-600')
                 ui.label(str(value)).classes('text-3xl font-bold')
-            ui.icon(icon).classes(f'text-5xl text-{color}-500')

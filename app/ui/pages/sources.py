@@ -3,6 +3,7 @@ from nicegui import ui
 from app.ui.layout import create_main_layout
 from app.database.crud import create_source, get_sources, delete_source
 from app.core import scheduler_manager
+from app.services.scraper_service import scrape_source_async
 
 # 全局状态
 sources_table = None
@@ -47,19 +48,17 @@ def show_add_source_dialog():
         
         def add():
             try:
-                create_source(
+                new_source = create_source(
                     name=name_input.value,
                     url=url_input.value,
                     platform=platform_select.value,
                     frequency=int(frequency_input.value)
                 )
                 
-                # 添加到调度器
-                sources = get_sources()
-                new_source = sources[-1]  # 最新添加的源
+                # 添加到调度器（使用真实的抓取函数）
                 scheduler_manager.add_job(
                     job_id=f"scrape_source_{new_source.id}",
-                    func=lambda: None,  # 这里应该调用实际的抓取函数
+                    func=scrape_source_async,
                     minutes=new_source.frequency,
                     source_id=new_source.id
                 )

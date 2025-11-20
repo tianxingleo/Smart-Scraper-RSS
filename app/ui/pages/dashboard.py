@@ -22,10 +22,23 @@ def dashboard():
             today = date.today()
             today_items = [i for i in items if i.created_at.date() == today]
             
-            stats_card('源数量', len(sources), 'source-branch', 'blue')
-            stats_card('抓取项', len(items), 'file-document', 'green')
+            stats_card('源数量', len(sources), 'folder-multiple', 'blue')
+            stats_card('抓取项', len(items), 'file-document-multiple', 'green')
             stats_card('今日抓取', len(today_items), 'calendar-today', 'orange')
             stats_card('定时任务', len(jobs), 'clock-outline', 'purple')
+        
+        # RSS Feed 引导卡片
+        with ui.card().classes('w-full p-4 mb-6 bg-blue-50'):
+            with ui.row().classes('items-center gap-4'):
+                ui.icon('mdi-rss').classes('text-4xl text-blue-600')
+                with ui.column().classes('flex-1'):
+                    ui.label('📡 RSS Feed 订阅').classes('text-lg font-bold mb-2')
+                    ui.label('您可以使用 RSS 阅读器订阅本应用生成的 Feed').classes('text-sm text-gray-600')
+                    with ui.row().classes('gap-2 mt-2'):
+                        feed_url = 'http://localhost:8080/feed.xml'
+                        ui.input('RSS 地址', value=feed_url).classes('flex-1').props('readonly')
+                        ui.button('复制', on_click=lambda: ui.run_javascript(f'navigator.clipboard.writeText("{feed_url}")'), color='primary').props('flat dense')
+                        ui.button(icon='mdi-open-in-new', on_click=lambda: ui.run_javascript(f'window.open("{feed_url}", "_blank")'), color='secondary').props('flat dense')
         
         # 最近抓取的内容
         with ui.card().classes('w-full p-4'):

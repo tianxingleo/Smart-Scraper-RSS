@@ -9,3 +9,4 @@ pyinstaller
 pydantic-settings
 APScheduler
 numpy
+opencv-python
