@@ -11,14 +11,14 @@ class LogViewer:
         self.container = None
     
     def create(self):
-        # 使用 glass_card，并在顶部增加一个深色 Header 模拟终端
-        with glass_card(classes='w-full flex flex-col overflow-hidden p-0 border-t-2 border-t-cyan-500/50'):
+        # 使用主题色边框
+        with glass_card(classes='w-full flex flex-col overflow-hidden p-0 border-t-2 border-t-[#66ccff]/50'):
             
             # Terminal Header
             with ui.row().classes('w-full bg-black/40 px-4 py-2 items-center justify-between border-b border-white/5 backdrop-blur-md'):
                 with ui.row().classes('items-center gap-2'):
-                    ui.icon('terminal').classes('text-cyan-400 text-xs')
-                    ui.label('SYSTEM LOGS').classes('text-[10px] font-mono font-bold text-cyan-400 tracking-widest')
+                    ui.icon('terminal').classes('text-[#66ccff] text-xs')
+                    ui.label('SYSTEM LOGS').classes('text-[10px] font-mono font-bold text-[#66ccff] tracking-widest')
                 
                 ui.button(icon='delete', on_click=self.clear).props('flat round dense size=xs color=grey').classes('opacity-50 hover:opacity-100')
 
@@ -34,9 +34,9 @@ class LogViewer:
     def add_log(self, message: str, level: str = 'INFO'):
         timestamp = datetime.now().strftime('%H:%M:%S')
         
-        # 霓虹配色
+        # 霓虹配色 - 适配主题色
         color_map = {
-            'INFO': 'text-cyan-300 shadow-[0_0_5px_rgba(103,232,249,0.3)]',
+            'INFO': 'text-[#66ccff] shadow-[0_0_5px_rgba(102,204,255,0.3)]',
             'WARNING': 'text-yellow-400',
             'ERROR': 'text-red-400 font-bold shadow-[0_0_8px_rgba(248,113,113,0.4)]'
         }

@@ -138,14 +138,14 @@ IOS_GLASS_CSS = """
     /* 滚动条美化 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+    ::-webkit-scrollbar-thumb { background: rgba(102, 204, 255, 0.2); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(102, 204, 255, 0.4); }
 </style>
 """
 
 # --- 交互与动画脚本 (JS) ---
 INTERACTION_JS = """
-// 1. 背景流体模拟 (Deep Ocean Fluid)
+// 1. 背景流体模拟 (Deep Ocean Fluid) - 配色调整为 66ccff 主题
 function initFluidBackground() {
     const canvas = document.getElementById('fluid-bg');
     if (!canvas) return;
@@ -153,22 +153,22 @@ function initFluidBackground() {
     let width, height;
     let blobs = [];
     
-    // 深海液态配色：深蓝、青色、紫色 (Deep Ocean Fluid)
+    // 天蓝色系深色变体
     const colors = [
-        {r: 15, g: 23, b: 42},   // Slate 900 - 深石板
-        {r: 23, g: 37, b: 84},   // Blue 950 - 深蓝
-        {r: 88, g: 28, b: 135},  // Purple 900 - 深紫
-        {r: 6, g: 78, b: 59},    // Emerald 900 - 深翠绿
-        {r: 12, g: 74, b: 110}   // Sky 900 - 深天蓝
+        {r: 2, g: 12, b: 23},     // 极深蓝底色
+        {r: 15, g: 40, b: 60},    // 深蓝灰
+        {r: 20, g: 80, b: 120},   // 深海蓝
+        {r: 0, g: 60, b: 90},     // 深青色
+        {r: 40, g: 100, b: 140}   //  muted blue
     ];
     
     class Blob {
         constructor() { this.init(); }
         init() {
             this.x = Math.random() * width; this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 0.5; // 减慢速度，更柔和
+            this.vx = (Math.random() - 0.5) * 0.5; 
             this.vy = (Math.random() - 0.5) * 0.5;
-            this.radius = Math.random() * 400 + 300; // 大半径产生平滑渐变
+            this.radius = Math.random() * 400 + 300; 
             this.color = colors[Math.floor(Math.random() * colors.length)];
         }
         update() {
@@ -180,8 +180,8 @@ function initFluidBackground() {
         }
         draw(ctx) {
             const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-            // 柔和的深海透明度渐变
-            gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.6)`);
+            // 柔和的透明度渐变
+            gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.5)`);
             gradient.addColorStop(0.5, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.2)`);
             gradient.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
             ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
@@ -197,7 +197,7 @@ function initFluidBackground() {
     
     function animate() {
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#020617'; // Slate 950 Base
+        ctx.fillStyle = '#010409'; // 极深背景
         ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = 'screen';
         blobs.forEach(b => { b.update(); b.draw(ctx); });
@@ -210,7 +210,7 @@ function initFluidBackground() {
     animate();
 }
 
-// 2. 卡片 3D 交互监听 (已修正 Glare 逻辑 - 精确跟踪光标)
+// 2. 卡片 3D 交互监听
 document.addEventListener('mousemove', (e) => {
     document.querySelectorAll('.liquid-glass-card').forEach(card => {
         const rect = card.getBoundingClientRect();
@@ -219,21 +219,15 @@ document.addEventListener('mousemove', (e) => {
         if (e.clientX >= rect.left - margin && e.clientX <= rect.right + margin && 
             e.clientY >= rect.top - margin && e.clientY <= rect.bottom + margin) {
             
-            // 鼠标相对于卡片的坐标
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-            
-            // 转换为百分比（0-100%）
             const xPct = x / rect.width;
             const yPct = y / rect.height;
             
-            // 3D 倾斜效果
-            const rotateX = (0.5 - yPct) * 5; // 适度倾斜
+            const rotateX = (0.5 - yPct) * 5;
             const rotateY = (xPct - 0.5) * 5;
             
             card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.005, 1.005, 1.005)`;
-            
-            // ✅ 修正：直接使用百分比定位 Glare 高光层，确保与鼠标对齐
             card.style.setProperty('--mx', `${xPct * 100}%`);
             card.style.setProperty('--my', `${yPct * 100}%`);
             
@@ -256,15 +250,15 @@ def create_header():
             ui.element('div').classes('glare-layer')
             
             with ui.row().classes('items-center gap-4 card-content'):
-                ui.icon('rocket').classes('text-3xl text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]')
-                ui.label('Smart Scraper RSS').classes('text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400')
+                ui.icon('rocket').classes('text-3xl text-[#66ccff] drop-shadow-[0_0_10px_rgba(102,204,255,0.8)]')
+                # 修改：小范围渐变色，更加和谐
+                ui.label('Smart Scraper RSS').classes('text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#66ccff] to-[#3399ff]')
             
             with ui.row().classes('items-center gap-2 card-content'):
-                ui.label('AI Enhanced').classes('text-xs font-mono text-cyan-200 border border-cyan-500/30 px-2 py-1 rounded-lg bg-cyan-500/10 backdrop-blur-sm')
+                ui.label('AI Enhanced').classes('text-xs font-mono text-[#66ccff] border border-[#66ccff]/30 px-2 py-1 rounded-lg bg-[#66ccff]/10 backdrop-blur-sm')
 
 def create_sidebar(current_page: str = 'dashboard'):
     """创建悬浮玻璃侧边栏"""
-    # 关键：no-shadow border-none bg-transparent 确保完全透明
     with ui.left_drawer(value=True).classes('bg-transparent no-shadow border-none p-4 z-40'):
         with glass_card(classes='h-full w-full p-4 gap-4'):
             ui.label('MENU').classes('text-xs font-bold text-gray-500 tracking-widest mb-4 ml-2')
@@ -279,7 +273,8 @@ def create_sidebar(current_page: str = 'dashboard'):
                 is_active = page_id == current_page
                 base_class = 'w-full justify-start rounded-xl transition-all duration-300 mb-2 py-3 px-4 font-medium '
                 if is_active:
-                    style_class = base_class + 'bg-white/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] backdrop-blur-sm border border-white/10'
+                    # 修改：选中状态使用 66ccff
+                    style_class = base_class + 'bg-[#66ccff]/10 text-[#66ccff] shadow-[0_0_15px_rgba(102,204,255,0.2)] backdrop-blur-sm border border-[#66ccff]/20'
                 else:
                     style_class = base_class + 'text-gray-400 hover:bg-white/5 hover:text-white'
                 

@@ -26,36 +26,34 @@ def enhanced_table(
         rows=rows,
         row_key='id',
         pagination=10
-    ).classes('w-full bg-transparent border-none') # 关键：全透明
+    ).classes('w-full bg-transparent border-none')
     
-    # 深度定制 Quasar 表格样式
     table.props('flat dark :rows-per-page-options="[10, 20]"')
     
-    # 自定义表头：半透明白色背景条 + 发光文字
+    # 自定义表头：修改字体颜色为主题色 66ccff
     table.add_slot('header', r'''
-        <q-tr :props="props" class="bg-white/5 border-b border-white/10 text-cyan-400 font-bold text-[10px] tracking-[0.1em]">
+        <q-tr :props="props" class="bg-white/5 border-b border-white/10 text-[#66ccff] font-bold text-[10px] tracking-[0.1em]">
             <q-th v-for="col in props.cols" :key="col.name" :props="props" class="opacity-80">
                 {{ col.label }}
             </q-th>
         </q-tr>
     ''')
     
-    # 自定义单元格：Hover 高亮
+    # 自定义单元格
     table.add_slot('body', r'''
-        <q-tr :props="props" class="hover:bg-white/5 transition-colors border-b border-white/5 text-gray-300 font-light text-sm">
+        <q-tr :props="props" class="hover:bg-[#66ccff]/5 transition-colors border-b border-white/5 text-gray-300 font-light text-sm">
             <q-td v-for="col in props.cols" :key="col.name" :props="props">
                 <div v-if="col.name !== 'actions'">{{ col.value }}</div>
                 <div v-else class="flex gap-2 justify-end">
                     ''' + 
-                    (f'''<q-btn flat round dense size="sm" icon="edit" color="purple-300" class="opacity-60 hover:opacity-100" @click="$parent.$emit('edit', props.row)" />''' if on_edit else '') +
-                    (f'''<q-btn flat round dense size="sm" icon="delete" color="red-400" class="opacity-60 hover:opacity-100" @click="$parent.$emit('delete', props.row)" />''' if on_delete else '') +
+                    (f'''<q-btn flat round dense size="sm" icon="edit" color="cyan" class="opacity-60 hover:opacity-100" @click="$parent.$emit('edit', props.row)" />''' if on_edit else '') +
+                    (f'''<q-btn flat round dense size="sm" icon="delete" color="red" class="opacity-60 hover:opacity-100" @click="$parent.$emit('delete', props.row)" />''' if on_delete else '') +
                     '''
                 </div>
             </q-td>
         </q-tr>
     ''')
 
-    # 绑定事件
     if on_edit: table.on('edit', lambda e: on_edit(e.args))
     if on_delete: table.on('delete', lambda e: on_delete(e.args))
     if on_action: table.on('action', lambda e: on_action(e.args))
