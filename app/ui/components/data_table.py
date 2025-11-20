@@ -1,4 +1,4 @@
-"""增强的数据表格组件"""
+"""增强的数据表格组件 - 透明版"""
 from nicegui import ui
 from typing import List, Dict, Callable, Optional
 
@@ -8,26 +8,15 @@ def enhanced_table(
     on_edit: Optional[Callable] = None,
     on_delete: Optional[Callable] = None,
     on_action: Optional[Callable] = None,
-    action_label: str = 'ACTIONS'
+    action_label: str = 'ACTION'
 ):
     """
-    创建增强的数据表格
-    
-    Args:
-        columns: 列定义
-        rows: 数据行
-        on_edit: 编辑回调函数
-        on_delete: 删除回调函数
-        on_action: 自定义操作回调
-        action_label: 操作按钮标签
-    
-    Returns:
-        table 对象
+    透明数据表格 (需放置在 glass_card 中)
     """
     # 添加操作列
     if on_edit or on_delete or on_action:
         columns_with_actions = columns + [
-            {'name': 'actions', 'label': action_label, 'field': 'actions', 'align': 'center'}
+            {'name': 'actions', 'label': '', 'field': 'actions', 'align': 'right'}
         ]
     else:
         columns_with_actions = columns
@@ -37,40 +26,38 @@ def enhanced_table(
         rows=rows,
         row_key='id',
         pagination=10
-    ).classes('w-full glass-panel rounded-2xl overflow-hidden')
+    ).classes('w-full bg-transparent border-none') # 关键：全透明
     
-    # 关键：使用 props 强制 Quasar 表格透明并使用深色模式
-    table.props('flat bordered dark')
+    # 深度定制 Quasar 表格样式
+    table.props('flat dark :rows-per-page-options="[10, 20]"')
     
-    # 自定义表头颜色 (Tailwind)
+    # 自定义表头：半透明白色背景条 + 发光文字
     table.add_slot('header', r'''
-        <q-tr :props="props" class="bg-white/5 text-cyan-300 font-bold uppercase text-xs tracking-wider">
-            <q-th v-for="col in props.cols" :key="col.name" :props="props">
+        <q-tr :props="props" class="bg-white/5 border-b border-white/10 text-cyan-400 font-bold text-[10px] tracking-[0.1em]">
+            <q-th v-for="col in props.cols" :key="col.name" :props="props" class="opacity-80">
                 {{ col.label }}
             </q-th>
         </q-tr>
     ''')
     
-    # 添加操作按钮槽
-    if on_edit or on_delete or on_action:
-        table.add_slot('body-cell-actions', r'''
-            <q-td key="actions" :props="props">
-                <div class="flex gap-2 justify-center">
-        ''' + 
-        (f'''<q-btn flat dense size="sm" color="purple" label="Edit" @click="$parent.$emit('edit', props.row)" />''' if on_edit else '') +
-        (f'''<q-btn flat dense size="sm" color="red" label="Delete" @click="$parent.$emit('delete', props.row)" />''' if on_delete else '') +
-        (f'''<q-btn flat dense size="sm" color="cyan" label="{action_label}" @click="$parent.$emit('action', props.row)" />''' if on_action else '') +
-        '''
+    # 自定义单元格：Hover 高亮
+    table.add_slot('body', r'''
+        <q-tr :props="props" class="hover:bg-white/5 transition-colors border-b border-white/5 text-gray-300 font-light text-sm">
+            <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                <div v-if="col.name !== 'actions'">{{ col.value }}</div>
+                <div v-else class="flex gap-2 justify-end">
+                    ''' + 
+                    (f'''<q-btn flat round dense size="sm" icon="edit" color="purple-300" class="opacity-60 hover:opacity-100" @click="$parent.$emit('edit', props.row)" />''' if on_edit else '') +
+                    (f'''<q-btn flat round dense size="sm" icon="delete" color="red-400" class="opacity-60 hover:opacity-100" @click="$parent.$emit('delete', props.row)" />''' if on_delete else '') +
+                    '''
                 </div>
             </q-td>
-        ''')
-        
-        # 绑定事件
-        if on_edit:
-            table.on('edit', lambda e: on_edit(e.args))
-        if on_delete:
-            table.on('delete', lambda e: on_delete(e.args))
-        if on_action:
-            table.on('action', lambda e: on_action(e.args))
+        </q-tr>
+    ''')
+
+    # 绑定事件
+    if on_edit: table.on('edit', lambda e: on_edit(e.args))
+    if on_delete: table.on('delete', lambda e: on_delete(e.args))
+    if on_action: table.on('action', lambda e: on_action(e.args))
     
     return table

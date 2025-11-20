@@ -28,6 +28,8 @@ AI 价值评估：
 
 现代化 GUI：基于 NiceGUI 的原生级桌面体验，无需敲命令行即可管理所有任务。
 
+🎨 **iOS 26 液态玻璃 UI**：采用前沿设计语言，融合「深海液态流体」背景动画（Deep Ocean Fluid）与微妙的 3D 视差交互。每个界面元素运用**高斯模糊、边缘高光、噪点纹理**三层合成技术，模拟真实玻璃的物理质感。鼠标移动时，卡片表面会产生跟随光标的镜面高光效果（Specular Highlight），配合轻微的倾斜视差，营造出悬浮于深海中的未来感界面。核心技术包括 CSS `backdrop-filter`、径向渐变光照、`perspective` 3D 变换与实时 Canvas 流体模拟。
+
 🧩 技术架构 (Modular Monolith)
 
 本项目并未采用传统的 requests + tkinter 方案，而是采用了更适应 2025 年反爬环境的现代技术栈：
@@ -278,6 +280,8 @@ Smart Scoring: Score content based on quality (0-100); content below the thresho
 Private RSS Hub: Generate standard RSS 2.0 feeds compatible with any reader like Feedly or Reeder.
 
 Modern GUI: Native-grade desktop experience based on NiceGUI, managing tasks without command-line operations.
+
+🎨 **iOS 26 Liquid Glass UI**: Features cutting-edge design language with "Deep Ocean Fluid" background animations and subtle 3D parallax interactions. Every UI element uses a **three-layer composite technique** (Gaussian blur, edge highlights, noise texture) to simulate realistic glass physics. Mouse movements create cursor-following specular highlights on card surfaces, combined with gentle tilt parallax, delivering a futuristic interface floating in the deep sea. Core technologies include CSS `backdrop-filter`, radial gradient lighting, `perspective` 3D transforms, and real-time Canvas fluid simulation.
 
 🧩 Technical Architecture (Modular Monolith)
 

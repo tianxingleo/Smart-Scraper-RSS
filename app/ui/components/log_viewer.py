@@ -1,69 +1,62 @@
-"""日志查看器组件"""
+"""日志查看器组件 - 液态玻璃版"""
 from nicegui import ui
 from datetime import datetime
 from typing import List
+from app.ui.components.glass_card import glass_card
 
 class LogViewer:
-    """全息风格日志查看器"""
-    
     def __init__(self, max_lines: int = 100):
         self.max_lines = max_lines
-        self.logs: List[str] = []
+        self.logs: List[tuple] = []
         self.container = None
     
     def create(self):
-        """创建日志查看器 UI"""
-        # 使用更深色的半透明背景，模拟终端
-        with ui.card().classes('w-full glass-panel p-0 overflow-hidden border-t-2 border-t-cyan-500/50'):
-            # 终端顶栏
-            with ui.row().classes('w-full bg-black/40 px-4 py-2 items-center justify-between border-b border-white/5'):
+        # 使用 glass_card，并在顶部增加一个深色 Header 模拟终端
+        with glass_card(classes='w-full flex flex-col overflow-hidden p-0 border-t-2 border-t-cyan-500/50'):
+            
+            # Terminal Header
+            with ui.row().classes('w-full bg-black/40 px-4 py-2 items-center justify-between border-b border-white/5 backdrop-blur-md'):
                 with ui.row().classes('items-center gap-2'):
-                    ui.icon('terminal').classes('text-cyan-500 text-sm')
-                    ui.label('SYSTEM LOGS').classes('text-xs font-mono font-bold text-cyan-500 tracking-widest')
+                    ui.icon('terminal').classes('text-cyan-400 text-xs')
+                    ui.label('SYSTEM LOGS').classes('text-[10px] font-mono font-bold text-cyan-400 tracking-widest')
                 
-                # 清除按钮改为图标
-                ui.button(icon='delete_sweep', on_click=self.clear).props('flat dense size=sm color=grey').classes('hover:text-red-400 transition-colors')
+                ui.button(icon='delete', on_click=self.clear).props('flat round dense size=xs color=grey').classes('opacity-50 hover:opacity-100')
 
-            # 日志内容区域
+            # Log Content Area
             self.container = ui.column().classes(
-                'bg-black/20 p-4 h-64 overflow-y-auto font-mono text-xs gap-1 scroll-smooth'
+                'w-full h-64 overflow-y-auto p-4 font-mono text-xs gap-1 scroll-smooth bg-black/10'
             )
-            # 初始提示
             with self.container:
-                ui.label('> System ready. Waiting for tasks...').classes('text-gray-500 italic')
+                ui.label('> System ready.').classes('text-gray-600 italic')
         
         return self
     
     def add_log(self, message: str, level: str = 'INFO'):
         timestamp = datetime.now().strftime('%H:%M:%S')
         
-        # 赛博风格配色
+        # 霓虹配色
         color_map = {
-            'INFO': 'text-cyan-300',
-            'WARNING': 'text-yellow-400 font-bold',
-            'ERROR': 'text-red-400 font-bold drop-shadow-[0_0_5px_rgba(248,113,113,0.5)]' # 错误带发光
+            'INFO': 'text-cyan-300 shadow-[0_0_5px_rgba(103,232,249,0.3)]',
+            'WARNING': 'text-yellow-400',
+            'ERROR': 'text-red-400 font-bold shadow-[0_0_8px_rgba(248,113,113,0.4)]'
         }
         color = color_map.get(level, 'text-gray-300')
         
-        log_entry = f'[{timestamp}]'
-        
+        self.logs.append((timestamp, level, message))
         if len(self.logs) > self.max_lines:
             self.logs.pop(0)
-        self.logs.append((log_entry, level, message)) # Store structured data
         
         if self.container:
             self.container.clear()
             with self.container:
                 for time_str, lvl, msg in self.logs:
-                    with ui.row().classes('gap-2 items-start no-wrap'):
-                        ui.label(time_str).classes('text-gray-600 select-none')
-                        ui.label(f'[{lvl}]').classes(f'{color} w-16 shrink-0')
+                    with ui.row().classes('gap-3 items-start no-wrap'):
+                        ui.label(time_str).classes('text-gray-600 select-none w-16 shrink-0')
+                        ui.label(lvl).classes(f'{color} w-12 shrink-0 font-bold')
                         ui.label(msg).classes('text-gray-300 break-all')
                 
-                # 自动滚动到底部 (NiceGUI trick)
-                ui.run_javascript(f'document.querySelector(".q-card__section--vert").scrollTop = document.querySelector(".q-card__section--vert").scrollHeight')
+                ui.run_javascript(f'var el = document.querySelector(".q-card__section--vert"); if(el) el.scrollTop = el.scrollHeight;')
     
     def clear(self):
         self.logs.clear()
-        if self.container:
-            self.container.clear()
+        if self.container: self.container.clear()

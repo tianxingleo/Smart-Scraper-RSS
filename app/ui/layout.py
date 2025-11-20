@@ -13,7 +13,22 @@ IOS_GLASS_CSS = """
         background-color: #000;
         font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         color: white;
-        overflow-x: hidden; /* 防止 3D 变换导致滚动条抖动 */
+        overflow-x: hidden;
+    }
+
+    /* 强制覆盖 Quasar 默认背景，确保侧边栏透明 */
+    .q-drawer {
+        background: transparent !important;
+        backdrop-filter: none !important;
+    }
+    .q-drawer__content {
+        background: transparent !important;
+    }
+    
+    /* 弹窗背景透明化 */
+    .q-dialog__inner > div {
+        background: transparent !important;
+        box-shadow: none !important;
     }
 
     /* 背景流体 Canvas */
@@ -24,7 +39,8 @@ IOS_GLASS_CSS = """
         width: 100%;
         height: 100%;
         z-index: -1;
-        filter: contrast(1.2) brightness(0.8);
+        /* 降低对比度，使背景更深邃 */
+        filter: contrast(1.1) brightness(0.7);
         pointer-events: none;
     }
 
@@ -37,13 +53,13 @@ IOS_GLASS_CSS = """
         
         /* 形状 */
         border-radius: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.15);
         
-        /* 复杂阴影系统：模拟厚度和内部发光 */
+        /* 复杂阴影系统 */
         box-shadow: 
-            0 20px 40px rgba(0, 0, 0, 0.2),
-            inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-            inset 0 0 20px rgba(255, 255, 255, 0.05);
+            0 20px 40px rgba(0, 0, 0, 0.4),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+            inset 0 0 20px rgba(255, 255, 255, 0.02);
         
         position: relative;
         overflow: hidden;
@@ -60,13 +76,13 @@ IOS_GLASS_CSS = """
         position: absolute;
         inset: 0;
         border-radius: 24px;
-        padding: 1.5px; /* 边框厚度 */
+        padding: 1.5px;
         background: linear-gradient(
             135deg, 
-            rgba(255, 255, 255, 0.6) 0%, 
-            rgba(255, 255, 255, 0.1) 30%, 
-            rgba(255, 255, 255, 0.05) 60%, 
-            rgba(255, 255, 255, 0.4) 100%
+            rgba(255, 255, 255, 0.4) 0%, 
+            rgba(255, 255, 255, 0.05) 30%, 
+            rgba(255, 255, 255, 0.02) 60%, 
+            rgba(255, 255, 255, 0.3) 100%
         ); 
         -webkit-mask: 
             linear-gradient(#fff 0 0) content-box, 
@@ -79,20 +95,18 @@ IOS_GLASS_CSS = """
     /* 交互式液态光泽层 (Specular Highlight) */
     .glare-layer {
         position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         /* 径向渐变模拟光源 */
         background: radial-gradient(
-            circle at 50% 50%,
-            rgba(255, 255, 255, 0.4) 0%,
-            rgba(255, 255, 255, 0.1) 20%,
+            circle at var(--mx, 50%) var(--my, 50%),
+            rgba(255, 255, 255, 0.3) 0%,
+            rgba(255, 255, 255, 0.05) 25%,
             transparent 50%
         );
         opacity: 0;
-        /* 由 JS 变量控制位置 */
-        transform: translate(var(--mx, 0), var(--my, 0));
         pointer-events: none;
         mix-blend-mode: overlay;
         transition: opacity 0.3s ease;
@@ -107,14 +121,14 @@ IOS_GLASS_CSS = """
     .card-content {
         position: relative;
         z-index: 2;
-        transform: translateZ(20px); /* 内容悬浮在玻璃内部 */
+        transform: translateZ(20px);
     }
 
-    /* 噪点纹理 - 增加真实感 */
+    /* 噪点纹理 */
     .noise-overlay {
         position: absolute;
         inset: 0;
-        opacity: 0.07;
+        opacity: 0.05;
         background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         pointer-events: none;
         z-index: 1;
@@ -131,25 +145,30 @@ IOS_GLASS_CSS = """
 
 # --- 交互与动画脚本 (JS) ---
 INTERACTION_JS = """
-// 1. 背景流体模拟
+// 1. 背景流体模拟 (Deep Ocean Fluid)
 function initFluidBackground() {
     const canvas = document.getElementById('fluid-bg');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let width, height;
     let blobs = [];
-    // iOS 风格霓虹配色
+    
+    // 深海液态配色：深蓝、青色、紫色 (Deep Ocean Fluid)
     const colors = [
-        {r: 59, g: 130, b: 246}, {r: 139, g: 92, b: 246}, 
-        {r: 236, g: 72, b: 153}, {r: 16, g: 185, b: 129}, {r: 245, g: 158, b: 11}
+        {r: 15, g: 23, b: 42},   // Slate 900 - 深石板
+        {r: 23, g: 37, b: 84},   // Blue 950 - 深蓝
+        {r: 88, g: 28, b: 135},  // Purple 900 - 深紫
+        {r: 6, g: 78, b: 59},    // Emerald 900 - 深翠绿
+        {r: 12, g: 74, b: 110}   // Sky 900 - 深天蓝
     ];
     
     class Blob {
         constructor() { this.init(); }
         init() {
             this.x = Math.random() * width; this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 2; this.vy = (Math.random() - 0.5) * 2;
-            this.radius = Math.random() * 300 + 200;
+            this.vx = (Math.random() - 0.5) * 0.5; // 减慢速度，更柔和
+            this.vy = (Math.random() - 0.5) * 0.5;
+            this.radius = Math.random() * 400 + 300; // 大半径产生平滑渐变
             this.color = colors[Math.floor(Math.random() * colors.length)];
         }
         update() {
@@ -161,9 +180,9 @@ function initFluidBackground() {
         }
         draw(ctx) {
             const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
-            // 使用 screen 混合模式的逻辑模拟
-            gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.8)`);
-            gradient.addColorStop(0.5, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.3)`);
+            // 柔和的深海透明度渐变
+            gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.6)`);
+            gradient.addColorStop(0.5, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0.2)`);
             gradient.addColorStop(1, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, 0)`);
             ctx.fillStyle = gradient; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
         }
@@ -173,13 +192,14 @@ function initFluidBackground() {
         width = window.innerWidth; height = window.innerHeight;
         canvas.width = width; canvas.height = height;
         blobs = [];
-        for(let i=0; i<6; i++) blobs.push(new Blob());
+        for(let i=0; i<5; i++) blobs.push(new Blob());
     }
     
     function animate() {
         ctx.clearRect(0, 0, width, height);
-        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, width, height);
-        ctx.globalCompositeOperation = 'screen'; // 关键：混合模式让颜色叠加发光
+        ctx.fillStyle = '#020617'; // Slate 950 Base
+        ctx.fillRect(0, 0, width, height);
+        ctx.globalCompositeOperation = 'screen';
         blobs.forEach(b => { b.update(); b.draw(ctx); });
         ctx.globalCompositeOperation = 'source-over';
         requestAnimationFrame(animate);
@@ -190,31 +210,34 @@ function initFluidBackground() {
     animate();
 }
 
-// 2. 卡片 3D 交互监听
+// 2. 卡片 3D 交互监听 (已修正 Glare 逻辑 - 精确跟踪光标)
 document.addEventListener('mousemove', (e) => {
     document.querySelectorAll('.liquid-glass-card').forEach(card => {
         const rect = card.getBoundingClientRect();
-        // 简单判断鼠标是否在卡片附近，优化性能
         const margin = 50;
+        
         if (e.clientX >= rect.left - margin && e.clientX <= rect.right + margin && 
             e.clientY >= rect.top - margin && e.clientY <= rect.bottom + margin) {
             
+            // 鼠标相对于卡片的坐标
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
+            
+            // 转换为百分比（0-100%）
             const xPct = x / rect.width;
             const yPct = y / rect.height;
             
-            // 3D 倾斜计算
-            const rotateX = (0.5 - yPct) * 8; // 角度幅度
-            const rotateY = (xPct - 0.5) * 8;
+            // 3D 倾斜效果
+            const rotateX = (0.5 - yPct) * 5; // 适度倾斜
+            const rotateY = (xPct - 0.5) * 5;
             
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.005, 1.005, 1.005)`;
             
-            // 更新 CSS 变量用于 Glare 位置
-            card.style.setProperty('--mx', `${x - rect.width}px`);
-            card.style.setProperty('--my', `${y - rect.height}px`);
+            // ✅ 修正：直接使用百分比定位 Glare 高光层，确保与鼠标对齐
+            card.style.setProperty('--mx', `${xPct * 100}%`);
+            card.style.setProperty('--my', `${yPct * 100}%`);
+            
         } else {
-            // 鼠标离开复位
             if (card.style.transform.includes('rotate')) {
                 card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)`;
             }
@@ -222,16 +245,13 @@ document.addEventListener('mousemove', (e) => {
     });
 });
 
-// 启动背景
 initFluidBackground();
 """
 
 def create_header():
     """创建悬浮玻璃顶栏"""
-    # Header 特殊处理，为了保持 fixed 属性，我们手动模拟 glass_card 结构
     with ui.header().classes('bg-transparent p-4 z-50'): 
         with ui.row().classes('liquid-glass-card w-full px-6 py-3 items-center justify-between'):
-            # 手动添加特效层
             ui.element('div').classes('noise-overlay')
             ui.element('div').classes('glare-layer')
             
@@ -244,10 +264,10 @@ def create_header():
 
 def create_sidebar(current_page: str = 'dashboard'):
     """创建悬浮玻璃侧边栏"""
+    # 关键：no-shadow border-none bg-transparent 确保完全透明
     with ui.left_drawer(value=True).classes('bg-transparent no-shadow border-none p-4 z-40'):
-        # 使用 glass_card 容器
         with glass_card(classes='h-full w-full p-4 gap-4'):
-            ui.label('MENU').classes('text-xs font-bold text-gray-400 tracking-widest mb-4 ml-2')
+            ui.label('MENU').classes('text-xs font-bold text-gray-500 tracking-widest mb-4 ml-2')
             
             menu_items = [
                 ('dashboard', '📊 Dashboard', '/dashboard'),
@@ -259,8 +279,7 @@ def create_sidebar(current_page: str = 'dashboard'):
                 is_active = page_id == current_page
                 base_class = 'w-full justify-start rounded-xl transition-all duration-300 mb-2 py-3 px-4 font-medium '
                 if is_active:
-                    # 激活态：发光 + 磨砂
-                    style_class = base_class + 'bg-white/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.3)] backdrop-blur-sm border border-white/10'
+                    style_class = base_class + 'bg-white/10 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] backdrop-blur-sm border border-white/10'
                 else:
                     style_class = base_class + 'text-gray-400 hover:bg-white/5 hover:text-white'
                 
@@ -269,22 +288,16 @@ def create_sidebar(current_page: str = 'dashboard'):
 @contextmanager
 def create_main_layout(current_page: str = 'dashboard'):
     """应用主布局入口"""
-    # 1. 注入 CSS
     ui.add_head_html(IOS_GLASS_CSS)
-    
-    # 2. 添加背景 Canvas (必须存在于 DOM 中 JS 才能找到)
     ui.element('canvas').props('id=fluid-bg')
-    
-    # 3. 运行 JS 动画
     ui.run_javascript(INTERACTION_JS)
 
     create_header()
     create_sidebar(current_page)
     
-    # 主内容区域
     with ui.column().classes('w-full p-4 pl-0 overflow-visible text-gray-100'):
         with ui.column().classes('w-full max-w-7xl mx-auto gap-6'):
             yield
     
     with ui.footer().classes('bg-transparent p-4 text-center'):
-        ui.label('© 2025 Smart Scraper RSS • iOS 26 Liquid Concept').classes('text-xs text-gray-500 font-mono opacity-50')
+        ui.label('© 2025 Smart Scraper RSS • iOS 26 Liquid Concept').classes('text-xs text-gray-600 font-mono')
