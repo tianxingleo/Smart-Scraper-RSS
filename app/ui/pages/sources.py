@@ -29,22 +29,23 @@ def refresh_table():
 
 def show_add_source_dialog():
     """显示添加源对话框"""
-    with ui.dialog() as dialog, ui.card().classes('w-96'):
-        ui.label('添加新源').classes('text-xl font-bold mb-4')
+    # 使用 glass-panel 样式
+    with ui.dialog() as dialog, ui.card().classes('w-96 glass-panel border border-cyan-500/30'):
+        ui.label('添加新源').classes('text-xl font-bold mb-4 text-cyan-100')
         
-        name_input = ui.input('源名称', placeholder='例如：我的 B 站收藏').classes('w-full')
-        url_input = ui.input('URL', placeholder='https://...').classes('w-full')
+        name_input = ui.input('源名称', placeholder='例如：我的 B 站收藏').classes('w-full').props('dark outlined dense')
+        url_input = ui.input('URL', placeholder='https://...').classes('w-full').props('dark outlined dense')
         platform_select = ui.select(
             ['bilibili', 'xiaohongshu', 'xiaoheihe', 'coolapk'],
             label='平台',
             value='bilibili'
-        ).classes('w-full')
+        ).classes('w-full').props('dark outlined dense')
         frequency_input = ui.number(
             '抓取频率（分钟）',
             value=60,
             min=1,
             max=1440
-        ).classes('w-full')
+        ).classes('w-full').props('dark outlined dense')
         
         def add():
             try:
@@ -70,8 +71,8 @@ def show_add_source_dialog():
                 ui.notify(f'添加失败: {str(e)}', type='negative')
         
         with ui.row().classes('w-full justify-end gap-2 mt-4'):
-            ui.button('取消', on_click=dialog.close, color='grey')
-            ui.button('添加', on_click=add, color='primary')
+            ui.button('取消', on_click=dialog.close, color='grey').props('flat')
+            ui.button('添加', on_click=add, color='cyan').props('unelevated')
     
     dialog.open()
 
@@ -93,13 +94,13 @@ def handle_delete(row):
         except Exception as e:
             ui.notify(f'删除失败: {str(e)}', type='negative')
     
-    with ui.dialog() as delete_dialog, ui.card():
-        ui.label('确认删除？').classes('text-lg font-bold mb-4')
-        ui.label(f'确定要删除源 "{row["name"]}" 吗？').classes('mb-4')
+    with ui.dialog() as delete_dialog, ui.card().classes('glass-panel border border-red-500/30'):
+        ui.label('确认删除？').classes('text-lg font-bold mb-4 text-red-200')
+        ui.label(f'确定要删除源 "{row["name"]}" 吗？').classes('mb-4 text-gray-300')
         
         with ui.row().classes('gap-2'):
-            ui.button('取消', on_click=delete_dialog.close, color='grey')
-            ui.button('确认删除', on_click=confirm_delete, color='negative')
+            ui.button('取消', on_click=delete_dialog.close, color='grey').props('flat')
+            ui.button('确认删除', on_click=confirm_delete, color='red').props('unelevated')
     
     delete_dialog.open()
 
@@ -113,46 +114,40 @@ def sources():
         
         # 工具栏
         with ui.row().classes('gap-4 mb-4'):
-            ui.button('添加源', on_click=show_add_source_dialog, color='primary').props('icon=add')
-            ui.button('刷新', on_click=refresh_table, color='secondary').props('icon=refresh')
+            ui.button('添加源', on_click=show_add_source_dialog, color='cyan').props('icon=add outline')
+            ui.button('刷新', on_click=refresh_table, color='purple').props('icon=refresh outline')
         
         # 源列表表格
-        with ui.card().classes('w-full p-4'):
-            sources_list = get_sources()
-            
-            columns = [
-                {'name': 'id', 'label': 'ID', 'field': 'id', 'align': 'left'},
-                {'name': 'name', 'label': '名称', 'field': 'name', 'align': 'left'},
-                {'name': 'platform', 'label': '平台', 'field': 'platform', 'align': 'center'},
-                {'name': 'url', 'label': 'URL', 'field': 'url', 'align': 'left'},
-                {'name': 'frequency', 'label': '频率(分)', 'field': 'frequency', 'align': 'center'},
-                {'name': 'is_active', 'label': '状态', 'field': 'is_active', 'align': 'center'},
-                {'name': 'last_scraped', 'label': '最后抓取', 'field': 'last_scraped', 'align': 'center'},
-                {'name': 'actions', 'label': '操作', 'field': 'actions', 'align': 'center'},
-            ]
-            
-            rows = [
-                {
-                    'id': s.id,
-                    'name': s.name,
-                    'platform': s.platform,
-                    'url': s.url[:40] + '...' if len(s.url) > 40 else s.url,
-                    'frequency': s.frequency,
-                    'is_active': '启用' if s.is_active else '禁用',
-                    'last_scraped': s.last_scraped.strftime('%Y-%m-%d %H:%M') if s.last_scraped else '从未'
-                }
-                for s in sources_list
-            ]
-            
-            sources_table = ui.table(columns=columns, rows=rows, row_key='id').classes('w-full')
-            
-            # 添加操作列
-            sources_table.add_slot('body-cell-actions', '''
-                <q-td :props="props">
-                    <q-btn size="sm" flat dense color="negative" label="删除" 
-                           @click="$parent.$emit('delete', props.row)" />
-                </q-td>
-            ''')
-            
-            # 监听删除事件
-            sources_table.on('delete', handle_delete)
+        # 移除 ui.card 容器，直接展示表格，或者给 card 加 glass-panel
+        # 这里我们直接用 enhanced_table，它自己有 glass-panel
+        sources_list = get_sources()
+        
+        columns = [
+            {'name': 'id', 'label': 'ID', 'field': 'id', 'align': 'left'},
+            {'name': 'name', 'label': '名称', 'field': 'name', 'align': 'left'},
+            {'name': 'platform', 'label': '平台', 'field': 'platform', 'align': 'center'},
+            {'name': 'url', 'label': 'URL', 'field': 'url', 'align': 'left'},
+            {'name': 'frequency', 'label': '频率(分)', 'field': 'frequency', 'align': 'center'},
+            {'name': 'is_active', 'label': '状态', 'field': 'is_active', 'align': 'center'},
+            {'name': 'last_scraped', 'label': '最后抓取', 'field': 'last_scraped', 'align': 'center'},
+        ]
+        
+        rows = [
+            {
+                'id': s.id,
+                'name': s.name,
+                'platform': s.platform,
+                'url': s.url[:40] + '...' if len(s.url) > 40 else s.url,
+                'frequency': s.frequency,
+                'is_active': '启用' if s.is_active else '禁用',
+                'last_scraped': s.last_scraped.strftime('%Y-%m-%d %H:%M') if s.last_scraped else '从未'
+            }
+            for s in sources_list
+        ]
+        
+        from app.ui.components.data_table import enhanced_table
+        sources_table = enhanced_table(
+            columns=columns, 
+            rows=rows,
+            on_delete=handle_delete # 使用 enhanced_table 的内置删除按钮
+        )

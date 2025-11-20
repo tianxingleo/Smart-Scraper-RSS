@@ -28,21 +28,21 @@ def dashboard():
             stats_card('定时任务', len(jobs), 'clock-outline', 'purple')
         
         # RSS Feed 引导卡片
-        with ui.card().classes('w-full p-4 mb-6 bg-blue-50'):
+        with ui.card().classes('w-full p-4 mb-6 glass-panel'):
             with ui.row().classes('items-center gap-4'):
-                ui.icon('mdi-rss').classes('text-4xl text-blue-600')
+                ui.icon('mdi-rss').classes('text-4xl text-cyan-400 drop-shadow-md')
                 with ui.column().classes('flex-1'):
-                    ui.label('📡 RSS Feed 订阅').classes('text-lg font-bold mb-2')
-                    ui.label('您可以使用 RSS 阅读器订阅本应用生成的 Feed').classes('text-sm text-gray-600')
+                    ui.label('📡 RSS Feed 订阅').classes('text-lg font-bold mb-2 text-cyan-100')
+                    ui.label('您可以使用 RSS 阅读器订阅本应用生成的 Feed').classes('text-sm text-gray-300')
                     with ui.row().classes('gap-2 mt-2'):
-                        feed_url = 'http://localhost:8080/feed.xml'
-                        ui.input('RSS 地址', value=feed_url).classes('flex-1').props('readonly')
-                        ui.button('复制', on_click=lambda: ui.run_javascript(f'navigator.clipboard.writeText("{feed_url}")'), color='primary').props('flat dense')
-                        ui.button(icon='mdi-open-in-new', on_click=lambda: ui.run_javascript(f'window.open("{feed_url}", "_blank")'), color='secondary').props('flat dense')
+                        feed_url = 'http://localhost:8081/feed.xml'
+                        ui.input('RSS 地址', value=feed_url).classes('flex-1').props('readonly dark outlined dense')
+                        ui.button('复制', on_click=lambda: ui.run_javascript(f'navigator.clipboard.writeText("{feed_url}")'), color='cyan').props('flat dense')
+                        ui.button(icon='mdi-open-in-new', on_click=lambda: ui.run_javascript(f'window.open("{feed_url}", "_blank")'), color='purple').props('flat dense')
         
         # 最近抓取的内容
-        with ui.card().classes('w-full p-4'):
-            ui.label('📰 最近抓取内容').classes('text-xl font-bold mb-4')
+        with ui.card().classes('w-full p-4 glass-panel'):
+            ui.label('📰 最近抓取内容').classes('text-xl font-bold mb-4 text-cyan-100')
             
             recent_items = get_scraped_items(limit=10)
             
@@ -64,14 +64,16 @@ def dashboard():
                     for item in recent_items
                 ]
                 
-                ui.table(columns=columns, rows=rows, row_key='id').classes('w-full')
+                # 使用 enhanced_table 或手动应用样式
+                from app.ui.components.data_table import enhanced_table
+                enhanced_table(columns=columns, rows=rows)
             else:
-                ui.label('暂无抓取内容').classes('text-gray-500')
+                ui.label('暂无抓取内容').classes('text-gray-400 italic')
         
         # 快速操作
-        with ui.card().classes('w-full p-4 mt-6'):
-            ui.label('⚡ 快速操作').classes('text-xl font-bold mb-4')
+        with ui.card().classes('w-full p-4 mt-6 glass-panel'):
+            ui.label('⚡ 快速操作').classes('text-xl font-bold mb-4 text-cyan-100')
             with ui.row().classes('gap-4'):
-                ui.button('添加源', on_click=lambda: ui.navigate.to('/sources'), color='primary').props('icon=add')
-                ui.button('查看源', on_click=lambda: ui.navigate.to('/sources'), color='secondary').props('icon=list')
-                ui.button('设置', on_click=lambda: ui.navigate.to('/settings'), color='grey').props('icon=settings')
+                ui.button('添加源', on_click=lambda: ui.navigate.to('/sources'), color='cyan').props('icon=add outline')
+                ui.button('查看源', on_click=lambda: ui.navigate.to('/sources'), color='purple').props('icon=list outline')
+                ui.button('设置', on_click=lambda: ui.navigate.to('/settings'), color='grey-7').props('icon=settings outline')

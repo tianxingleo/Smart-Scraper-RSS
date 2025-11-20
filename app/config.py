@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     PROXY_SERVER: Optional[str] = None  # 代理服务器地址，例如 "http://127.0.0.1:7890"
     
     # UI 配置
-    UI_PORT: int = 8080
+    UI_PORT: int = 8081
     UI_NATIVE_MODE: bool = False  # Web 模式，避免需要 pywebview
     UI_WINDOW_SIZE: tuple = (1200, 800)
     
